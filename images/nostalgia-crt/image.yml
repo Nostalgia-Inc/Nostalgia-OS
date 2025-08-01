@@ -1,0 +1,22 @@
+name: nostalgia-crt
+description: "Nostalgia CRT - KDE-based Bazzite variant"
+base-image: ghcr.io/ublue-os/bazzite-kinoite:latest
+iso-name: nostalgia-crt.iso
+
+rpm-ostree:
+  install:
+    - arduino
+
+default-user:
+  name: crt
+  description: "Nostalgia CRT User"
+  password: "nostalgia"
+  groups:
+    - wheel
+    - audio
+    - video
+
+system:
+  hostname: nostalgiasys_CRT
+
+firstboot: true
