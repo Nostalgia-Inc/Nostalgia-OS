@@ -6,7 +6,7 @@ LABEL org.opencontainers.image.title="Nostalgia CRT"
 LABEL org.opencontainers.image.description="KDE-based CRT image with Arduino IDE and EmuDeck setup"
 LABEL org.opencontainers.image.authors="Nostalgia INC."
 
-COPY ../common /usr/share/nostalgia
+COPY ./common /usr/share/nostalgia
 COPY firstboot/10-nostalgia-setup.sh /etc/firstboot.d/10-nostalgia-setup.sh
 COPY firstboot/nostalgia.service /etc/systemd/system/nostalgia.service
 
