@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -oue pipefail
+set -e
 
 echo "[Nostalgia CRT] Running first boot setup..."
 
@@ -9,8 +10,9 @@ if [[ -f "$wallpaper" ]]; then
   cp "$wallpaper" /usr/share/wallpapers/Nostalgia.png
 fi
 
-# Run EmuDeck install script (from /usr/share/nostalgia/scripts)
-chmod +x /usr/share/nostalgia/scripts/install-emudeck.sh
-bash /usr/share/nostalgia/scripts/install-emudeck.sh || true
+# Custom hostname
+hostnamectl set-hostname "$(hostname)_CRT"
+
+systemctl disable nostalgia.service
 
 echo "[Nostalgia CRT] First boot setup completed."

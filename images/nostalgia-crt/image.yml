@@ -17,6 +17,6 @@ default-user:
     - video
 
 system:
-  hostname: nostalgiasys_CRT
+  hostname: NostalgiaSYS_CRT
 
 firstboot: true

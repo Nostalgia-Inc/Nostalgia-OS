@@ -1,4 +1,3 @@
-# FROM remains the same
 ARG BASE_IMAGE
 FROM ghcr.io/ublue-os/bazzite:latest
 
@@ -6,10 +5,15 @@ LABEL org.opencontainers.image.title="Nostalgia CRT"
 LABEL org.opencontainers.image.description="KDE-based CRT image with Arduino IDE and EmuDeck setup"
 LABEL org.opencontainers.image.authors="Nostalgia INC."
 
-# These paths now work from the repo root
-COPY ./common /usr/share/nostalgia
-COPY images/nostalgia-crt/firstboot/10-nostalgia-setup.sh /etc/firstboot.d/10-nostalgia-setup.sh
-COPY images/nostalgia-crt/firstboot/nostalgia.service /etc/systemd/system/nostalgia.service
+# Arduino and EmuDeck pre-installed via rpm-ostree
+RUN rpm-ostree install arduino steam-devices
+
+# Copy shared branding, scripts (optional, if needed)
+COPY /common /usr/share/nostalgia
+
+# First boot setup
+COPY firstboot/10-nostalgia-setup.sh /etc/firstboot.d/10-nostalgia-setup.sh
+COPY firstboot/nostalgia.service /etc/systemd/system/nostalgia.service
 
 RUN chmod +x /etc/firstboot.d/10-nostalgia-setup.sh && \
     systemctl enable nostalgia.service

@@ -1,11 +1,10 @@
 [Unit]
-Description=First boot customization for Nostalgia CRT
-After=network-online.target
-Before=graphical.target
+Description=Nostalgia CRT First Boot Setup
+After=network.target
 
 [Service]
-Type=oneshot
 ExecStart=/etc/firstboot.d/10-nostalgia-setup.sh
+Type=oneshot
 RemainAfterExit=true
 
 [Install]
