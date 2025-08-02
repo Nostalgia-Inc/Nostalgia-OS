@@ -7,7 +7,7 @@ LABEL org.opencontainers.image.description="KDE-based CRT image with Arduino IDE
 LABEL org.opencontainers.image.authors="Nostalgia INC."
 
 # These paths now work from the repo root
-COPY common /usr/share/nostalgia
+COPY ./common /usr/share/nostalgia
 COPY images/nostalgia-crt/firstboot/10-nostalgia-setup.sh /etc/firstboot.d/10-nostalgia-setup.sh
 COPY images/nostalgia-crt/firstboot/nostalgia.service /etc/systemd/system/nostalgia.service
 
