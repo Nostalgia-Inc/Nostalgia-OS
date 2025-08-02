@@ -25,22 +25,20 @@ This image is built purposely built for the Lattepanda Delta 3 Single Board Comp
 - [Main][(https://github.com/ublue-os/main/)]
 - [Bazzite][(https://bazzite.gg/)]
 
-# Current Modifacations
+## Current Modifacations
 
-## 10-nostalgia-setup.sh
+### 10-nostalgia-setup.sh
   - Custom Default User
   - Custom Default Wallpaper
   - Download and Install Arduino IDE 
 
-# Future Additions 
-
+### Future Additions 
   - Configure Custom Nostalgia CRT Plymouth Theme
   - Configure Custom GRUB Theme
   - Customise and Configure Nostalgia Arcade Sub-System
 
 
 # Nostalgia Arcade 
-
 This image is meant for more of a standard system install. 
 
 
