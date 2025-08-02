@@ -1,19 +1,21 @@
-ARG BASE_IMAGE
+# Containerfile for nostalgia-crt
 FROM ghcr.io/ublue-os/bazzite:latest
 
 LABEL org.opencontainers.image.title="Nostalgia CRT"
-LABEL org.opencontainers.image.description="KDE-based CRT image with Arduino IDE and EmuDeck setup"
+LABEL org.opencontainers.image.description="KDE-based CRT image with Arduino IDE, EmuDeck, and custom tweaks"
 LABEL org.opencontainers.image.authors="Nostalgia INC."
 
-# Arduino and EmuDeck pre-installed via rpm-ostree
-RUN rpm-ostree install arduino steam-devices
+# Install extra packages that exist in rpm-ostree
+RUN rpm-ostree install \
+  steam-devices
 
-# Copy shared branding, scripts (optional, if needed)
-COPY /common /usr/share/nostalgia
+# Install Arduino IDE via Flatpak (more stable on Bazzite)
+RUN flatpak install -y --noninteractive flathub cc.arduino.arduinoide
 
-# First boot setup
+# Copy first boot script and service
 COPY firstboot/10-nostalgia-setup.sh /etc/firstboot.d/10-nostalgia-setup.sh
 COPY firstboot/nostalgia.service /etc/systemd/system/nostalgia.service
 
+# Make sure the script is executable and service is enabled
 RUN chmod +x /etc/firstboot.d/10-nostalgia-setup.sh && \
     systemctl enable nostalgia.service
