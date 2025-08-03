@@ -10,6 +10,10 @@ if [[ -f "$wallpaper" ]]; then
   cp "$wallpaper" /usr/share/wallpapers/Nostalgia.png
 fi
 
+# Custom User
+useradd -m -G wheel -s /bin/bash crt
+echo "crt:nostalgia" | chpasswd
+
 # Custom hostname
 hostnamectl set-hostname "$(hostname)_CRT"
 
