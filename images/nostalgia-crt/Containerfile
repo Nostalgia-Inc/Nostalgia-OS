@@ -1,8 +1,12 @@
 FROM ghcr.io/ublue-os/bazzite:latest
 
-LABEL org.opencontainers.image.title="Nostalgia CRT"
-LABEL org.opencontainers.image.description="KDE-based CRT image with EmuDeck and first boot setup"
+LABEL org.opencontainers.image.title="Nostalgia OS"
+LABEL org.opencontainers.image.description="KDE-based CRT image with Arduino IDE and EmuDeck setup"
 LABEL org.opencontainers.image.authors="Nostalgia INC."
+LABEL org.opencontainers.image.licenses="Apache-2.0"
+LABEL org.opencontainers.image.source="https://github.com/Nostalgia-Inc/Nostalgia-OS"
+LABEL org.osbuild.image.rootfs-type="oci"
+
 
 # Only include RPMs here — Flatpak goes in firstboot!
 RUN rpm-ostree install steam-devices
