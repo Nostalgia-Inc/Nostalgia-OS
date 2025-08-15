@@ -97,6 +97,7 @@ jobs:
             io.artifacthub.package.prerelease=false
             containers.bootc=1
             containers.bootc.rootfs-type=ostree
+            org.osbuild.image.rootfs-type=ostree
           sep-tags: " "
           sep-annotations: " "
 

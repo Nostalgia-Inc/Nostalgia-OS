@@ -1,11 +1,14 @@
 [Unit]
-Description=Nostalgia CRT First Boot Setup
-After=network.target
+Description=Nostalgia OS first-boot setup
+After=network-online.target
+Wants=network-online.target
+# Make sure we run our setup before the greeter so autologin applies immediately
+Before=display-manager.service graphical.target
 
 [Service]
-ExecStart=/etc/firstboot.d/10-nostalgia-setup.sh
 Type=oneshot
-RemainAfterExit=true
+ExecStart=/etc/firstboot.d/10-nostalgia-setup.sh
+RemainAfterExit=yes
 
 [Install]
 WantedBy=multi-user.target
