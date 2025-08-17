@@ -1,3 +1,10 @@
 [[customizations.filesystem]]
 mountpoint = "/"
 minsize = "20 GiB"
+
+# Root filesystem choice is given to the action via --rootfs flag (see workflow below)
+
+[[customizations.user]]
+name = "nostalgia"
+password = "nostalgia"  # CHANGE ME (use a hashed password in real builds)
+groups = ["wheel"]

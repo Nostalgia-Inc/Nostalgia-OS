@@ -1,19 +1,17 @@
 FROM ghcr.io/ublue-os/bazzite:latest
 
 LABEL org.opencontainers.image.title="Nostalgia OS"
-LABEL org.opencontainers.image.description="KDE-based CRT image with Arduino IDE and EmuDeck setup"
-LABEL org.opencontainers.image.authors="Nostalgia INC."
-LABEL org.opencontainers.image.licenses="Apache-2.0"
+LABEL org.opencontainers.image.description="KDE-based image with Arduino IDE (Flatpak) and EmuDeck setup on first boot"
+LABEL org.opencontainers.image.authors="Nostalgia Inc."
 LABEL org.opencontainers.image.source="https://github.com/Nostalgia-Inc/Nostalgia-OS"
-LABEL org.osbuild.image.rootfs-type="oci"
 
+# Copy branding and first-boot content from this directory's subfolders
+# (Because the workflow build context is images/nostalgia-os)
+COPY ./common/ /usr/share/nostalgia/
+COPY ./firstboot/nostalgia-firstboot.service /etc/systemd/system/nostalgia-firstboot.service
+COPY ./firstboot/10-nostalgia-setup.sh /usr/lib/nostalgia/10-firstboot.sh
+COPY ./firstboot/00-sddm-autologin.conf /etc/sddm.conf.d/00-autologin.conf
 
-# Only include RPMs here — Flatpak goes in firstboot!
-RUN rpm-ostree install steam-devices
-
-# Copy scripts (corrected paths, assuming context is repo root)
-COPY images/nostalgia-crt/firstboot/10-nostalgia-setup.sh /etc/firstboot.d/10-nostalgia-setup.sh
-COPY images/nostalgia-crt/firstboot/nostalgia.service /etc/systemd/system/nostalgia.service
-
-RUN chmod +x /etc/firstboot.d/10-nostalgia-setup.sh && \
-    systemctl enable nostalgia.service
+# Make first-boot script executable and enable the unit
+RUN chmod +x /usr/lib/nostalgia/10-firstboot.sh && \
+    systemctl enable nostalgia-firstboot.service
