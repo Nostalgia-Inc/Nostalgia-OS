@@ -7,10 +7,13 @@ LABEL org.opencontainers.image.source="https://github.com/Nostalgia-Inc/Nostalgi
 
 # Copy branding and first-boot content from this directory's subfolders
 # (Because the workflow build context is images/nostalgia-os)
-COPY ./common/ /usr/share/nostalgia/
-COPY ./firstboot/nostalgia-firstboot.service /etc/systemd/system/nostalgia-firstboot.service
-COPY ./firstboot/10-nostalgia-setup.sh /usr/lib/nostalgia/10-firstboot.sh
-COPY ./firstboot/00-sddm-autologin.conf /etc/sddm.conf.d/00-autologin.conf
+# from repo root now:
+COPY common/                                   /usr/share/nostalgia/
+COPY images/nostalgia-crt/firstboot/10-nostalgia-setup.sh      /usr/lib/nostalgia/10-firstboot.sh
+COPY images/nostalgia-crt/firstboot/nostalgia-firstboot.service /etc/systemd/system/nostalgia-firstboot.service
+# (optional, if you ship autologin)
+COPY images/nostalgia-crt/firstboot/00-sddm-autologin.conf     /etc/sddm.conf.d/00-autologin.conf
+
 
 # Make first-boot script executable and enable the unit
 RUN chmod +x /usr/lib/nostalgia/10-firstboot.sh && \
