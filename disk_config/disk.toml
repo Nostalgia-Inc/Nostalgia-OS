@@ -6,5 +6,5 @@ minsize = "20 GiB"
 
 [[customizations.user]]
 name = "nostalgia"
-password = "nostalgia"  # CHANGE ME (use a hashed password in real builds)
+password = "nostalgia"
 groups = ["wheel"]
