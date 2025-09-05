@@ -2,7 +2,7 @@
 contents = """
 user --name=nostalgia --groups=wheel --password=nostalgia
 rootpw --lock
-
+"""
 
 [customizations.installer.modules]
 enable = [
