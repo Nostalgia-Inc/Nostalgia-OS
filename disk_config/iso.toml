@@ -6,7 +6,7 @@ rootpw --lock
 
 [customizations.installer.modules]
 enable = [
-  "org.fedoraproject.Anaconda.Modules.Storage".
+  "org.fedoraproject.Anaconda.Modules.Storage",
   "org.fedoraproject.Anaconda.Modules.Timezone",
   "org.fedoraproject.Anaconda.Modules.Users"
 ]
