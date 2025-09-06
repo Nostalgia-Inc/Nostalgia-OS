@@ -28,18 +28,23 @@ This image is built purposely built for the Lattepanda Delta 3 Single Board Comp
 ## Current Modifacations
 
 ### 10-nostalgia-setup.sh
-  - Custom Default User
-  - Custom Default Wallpaper
-  - Download and Install Arduino IDE 
-
-## Future Additions 
-  - Configure Custom Nostalgia CRT Plymouth Theme
-  - Configure Custom GRUB Theme
-  - Power and Performance Tweaks
+  - Custom Default User - [Successful]
+  - Custom Default Wallpaper - [Loading...]
+  - Download and Install Arduino IDE - [Loading...]
+  - Configure Custom Nostalgia CRT Plymouth Theme - [Loading...]
+  - Configure Custom GRUB Theme - [Loading...]
+  - Power and Performance Tweaks - [Loading...]
 
 
 # Nostalgia Arcade - Loading In Progress...
 
-This image is meant for more of a standard system install. 
+This image is meant for more of a standard system install on non specific hardware. 
 
+## Current Modifacations
+
+### 10-nostalgia-setup.sh
+  - Custom Default User - [Successful]
+  - Custom Default Wallpaper - [Loading...]
+  - Configure Custom Nostalgia ARCADE Plymouth Theme - [Loading...]
+  - Configure Custom GRUB Theme - [Loading...]
 
