@@ -4,11 +4,6 @@ name: Build disk images
 on:
   workflow_dispatch:
     inputs:
-      upload-to-s3:
-        description: "Upload to S3"
-        required: false
-        default: false
-        type: boolean
       platform:
         required: true
         type: choice
@@ -25,7 +20,7 @@ on:
 
 env:
   IMAGE_NAME: ${{ github.event.repository.name }} # output of build.yml, keep in sync
-  IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"  # do not edit
+  IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
   DEFAULT_TAG: "latest"
   BIB_IMAGE: "ghcr.io/lorbuschris/bootc-image-builder:20250608"
 
@@ -49,10 +44,10 @@ jobs:
           set -euo pipefail
           USER_UID=$(id -u)
           USER_GID=$(id -g)
-          echo "IMAGE_REGISTRY=${IMAGE_REGISTRY,,}" >> ${GITHUB_ENV}
-          echo "IMAGE_NAME=${IMAGE_NAME,,}" >> ${GITHUB_ENV}
-          echo "USER_UID=${USER_UID}" >> ${GITHUB_ENV}
-          echo "USER_GID=${USER_GID}" >> ${GITHUB_ENV}
+          echo "IMAGE_REGISTRY=${IMAGE_REGISTRY,,}" >> "${GITHUB_ENV}"
+          echo "IMAGE_NAME=${IMAGE_NAME,,}" >> "${GITHUB_ENV}"
+          echo "USER_UID=${USER_UID}" >> "${GITHUB_ENV}"
+          echo "USER_GID=${USER_GID}" >> "${GITHUB_ENV}"
 
       - name: Install dependencies (arm64)
         if: inputs.platform == 'arm64'
@@ -83,6 +78,7 @@ jobs:
           additional-args: --use-librepo=True
 
       - name: List builder outputs
+        if: always()
         shell: bash
         run: |
           set -euo pipefail
@@ -95,38 +91,38 @@ jobs:
         run: |
           set -euo pipefail
           DATE=$(date -u +%Y%m%d)
-          echo "date=$DATE" >> "$GITHUB_OUTPUT"
-          echo "base=nostalgia-anaconda-iso-${{ inputs.platform }}-$DATE" >> "$GITHUB_OUTPUT"
+          echo "date=${DATE}" >> "${GITHUB_OUTPUT}"
+          echo "base=nostalgia-anaconda-iso-${{ inputs.platform }}-${DATE}" >> "${GITHUB_OUTPUT}"
 
       - name: Rename ISO to nostalgia-*
         shell: bash
         run: |
           set -euo pipefail
           OUT="${{ steps.build.outputs.output-directory }}"
-          echo "OUT=$OUT"
-          ls -la "$OUT" || true
+          echo "OUT=${OUT}"
+          ls -la "${OUT}" || true
 
-          SRC="$(find "$OUT" -maxdepth 1 -type f -name '*.iso' -print -quit || true)"
+          SRC="$(find "${OUT}" -maxdepth 1 -type f -name '*.iso' -print -quit || true)"
           if [[ -z "${SRC}" ]]; then
-            echo "No ISO found in $OUT"
+            echo "No ISO found in ${OUT}"
             echo "Contents:"
-            find "$OUT" -maxdepth 2 -type f -print || true
+            find "${OUT}" -maxdepth 2 -type f -print || true
             exit 1
           fi
 
-          mv -v "$SRC" "$OUT/${{ steps.names.outputs.base }}.iso"
+          mv -v "${SRC}" "${OUT}/${{ steps.names.outputs.base }}.iso"
 
-          if compgen -G "$OUT/*.sha256sum" > /dev/null; then
-            for f in "$OUT"/*.sha256sum; do
-              mv -v "$f" "$OUT/${{ steps.names.outputs.base }}.sha256sum"
+          if compgen -G "${OUT}/*.sha256sum" > /dev/null; then
+            for f in "${OUT}"/*.sha256sum; do
+              mv -v "${f}" "${OUT}/${{ steps.names.outputs.base }}.sha256sum"
             done
           fi
 
-          echo "Final contents of $OUT:"
-          ls -l "$OUT"
+          echo "Final contents of ${OUT}:"
+          ls -l "${OUT}"
 
       - name: Upload ISO artifact
-        if: inputs.upload-to-s3 != true && github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: ${{ steps.names.outputs.base }}
@@ -135,9 +131,3 @@ jobs:
           retention-days: 7
           compression-level: 0
           overwrite: true
-
-      - name: Upload to S3
-        if: inputs.upload-to-s3 == true && github.event_name != 'pull_request'
-        shell: bash
-        env:
-          RCLONE_CONFIG_S3_TYPE_
