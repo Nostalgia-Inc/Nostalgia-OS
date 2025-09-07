@@ -44,7 +44,9 @@ jobs:
 
     steps:
       - name: Prepare environment
+        shell: bash
         run: |
+          set -euo pipefail
           USER_UID=$(id -u)
           USER_GID=$(id -g)
           echo "IMAGE_REGISTRY=${IMAGE_REGISTRY,,}" >> ${GITHUB_ENV}
@@ -54,8 +56,9 @@ jobs:
 
       - name: Install dependencies (arm64)
         if: inputs.platform == 'arm64'
+        shell: bash
         run: |
-          set -x
+          set -euo pipefail
           sudo apt update -y
           sudo apt install -y podman
 
@@ -80,21 +83,61 @@ jobs:
           additional-args: --use-librepo=True
 
       - name: List builder outputs
+        shell: bash
         run: |
+          set -euo pipefail
           echo "Output dir: ${{ steps.build.outputs.output-directory }}"
-          find "${{ steps.build.outputs.output-directory }}" -maxdepth 2 -type f -print
+          find "${{ steps.build.outputs.output-directory }}" -maxdepth 2 -type f -print || true
 
       - name: Compute artifact names
         id: names
+        shell: bash
         run: |
+          set -euo pipefail
           DATE=$(date -u +%Y%m%d)
-          echo "date=$DATE" >> $GITHUB_OUTPUT
-          echo "base=nostalgia-anaconda-iso-${{ inputs.platform }}-$DATE" >> $GITHUB_OUTPUT
+          echo "date=$DATE" >> "$GITHUB_OUTPUT"
+          echo "base=nostalgia-anaconda-iso-${{ inputs.platform }}-$DATE" >> "$GITHUB_OUTPUT"
 
       - name: Rename ISO to nostalgia-*
+        shell: bash
         run: |
+          set -euo pipefail
           OUT="${{ steps.build.outputs.output-directory }}"
-          mkdir -p "$OUT"
-          SRC=$(find "$OUT" -maxdepth 1 -type f -name "*.iso" -print -quit)
-          if [ -z "$SRC" ]; then
-            echo
+          echo "OUT=$OUT"
+          ls -la "$OUT" || true
+
+          SRC="$(find "$OUT" -maxdepth 1 -type f -name '*.iso' -print -quit || true)"
+          if [[ -z "${SRC}" ]]; then
+            echo "No ISO found in $OUT"
+            echo "Contents:"
+            find "$OUT" -maxdepth 2 -type f -print || true
+            exit 1
+          fi
+
+          mv -v "$SRC" "$OUT/${{ steps.names.outputs.base }}.iso"
+
+          if compgen -G "$OUT/*.sha256sum" > /dev/null; then
+            for f in "$OUT"/*.sha256sum; do
+              mv -v "$f" "$OUT/${{ steps.names.outputs.base }}.sha256sum"
+            done
+          fi
+
+          echo "Final contents of $OUT:"
+          ls -l "$OUT"
+
+      - name: Upload ISO artifact
+        if: inputs.upload-to-s3 != true && github.event_name != 'pull_request'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ${{ steps.names.outputs.base }}
+          path: ${{ steps.build.outputs.output-directory }}/*
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
+          overwrite: true
+
+      - name: Upload to S3
+        if: inputs.upload-to-s3 == true && github.event_name != 'pull_request'
+        shell: bash
+        env:
+          RCLONE_CONFIG_S3_TYPE_
