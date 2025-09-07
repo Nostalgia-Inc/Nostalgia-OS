@@ -1,133 +1,43 @@
----
-name: Build disk images
-
-on:
-  workflow_dispatch:
-    inputs:
-      platform:
-        required: true
-        type: choice
-        options:
-          - amd64
-          - arm64
-  pull_request:
-    branches:
-      - main
-    paths:
-      - './disk_config/disk.toml'
-      - './disk_config/iso.toml'
-      - './.github/workflows/build-disk.yml'
-
-env:
-  IMAGE_NAME: ${{ github.event.repository.name }} # output of build.yml, keep in sync
-  IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
-  DEFAULT_TAG: "latest"
-  BIB_IMAGE: "ghcr.io/lorbuschris/bootc-image-builder:20250608"
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
-  cancel-in-progress: true
-
-jobs:
-  build:
-    name: Build ISO
-    runs-on: ${{ inputs.platform == 'amd64' && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}
-    permissions:
-      contents: read
-      packages: read
-      id-token: write
-
-    steps:
-      - name: Prepare environment
-        shell: bash
-        run: |
-          set -euo pipefail
-          USER_UID=$(id -u)
-          USER_GID=$(id -g)
-          echo "IMAGE_REGISTRY=${IMAGE_REGISTRY,,}" >> "${GITHUB_ENV}"
-          echo "IMAGE_NAME=${IMAGE_NAME,,}" >> "${GITHUB_ENV}"
-          echo "USER_UID=${USER_UID}" >> "${GITHUB_ENV}"
-          echo "USER_GID=${USER_GID}" >> "${GITHUB_ENV}"
-
-      - name: Install dependencies (arm64)
-        if: inputs.platform == 'arm64'
-        shell: bash
-        run: |
-          set -euo pipefail
-          sudo apt update -y
-          sudo apt install -y podman
-
-      - name: Maximize build space (amd64)
-        if: inputs.platform != 'arm64'
-        uses: ublue-os/remove-unwanted-software@cc0becac701cf642c8f0a6613bbdaf5dc36b259e # v9
-        with:
-          remove-codeql: true
-
-      - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
-
-      - name: Build Anaconda ISO
-        id: build
-        uses: osbuild/bootc-image-builder-action@main
-        with:
-          builder-image: ${{ env.BIB_IMAGE }}
-          config-file: ./disk_config/iso.toml
-          image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
-          chown: ${{ env.USER_UID }}:${{ env.USER_GID }}
-          types: anaconda-iso
-          additional-args: --use-librepo=True
-
       - name: List builder outputs
         if: always()
         shell: bash
         run: |
           set -euo pipefail
           echo "Output dir: ${{ steps.build.outputs.output-directory }}"
-          find "${{ steps.build.outputs.output-directory }}" -maxdepth 2 -type f -print || true
+          # Show up to 3 levels to catch bootiso/install.iso
+          find "${{ steps.build.outputs.output-directory }}" -maxdepth 3 -type f -print || true
 
-      - name: Compute artifact names
-        id: names
-        shell: bash
-        run: |
-          set -euo pipefail
-          DATE=$(date -u +%Y%m%d)
-          echo "date=${DATE}" >> "${GITHUB_OUTPUT}"
-          echo "base=nostalgia-anaconda-iso-${{ inputs.platform }}-${DATE}" >> "${GITHUB_OUTPUT}"
-
-      - name: Rename ISO to nostalgia-*
+      - name: Move & rename ISO to nostalgia-*
         shell: bash
         run: |
           set -euo pipefail
           OUT="${{ steps.build.outputs.output-directory }}"
           echo "OUT=${OUT}"
-          ls -la "${OUT}" || true
 
-          SRC="$(find "${OUT}" -maxdepth 1 -type f -name '*.iso' -print -quit || true)"
+          # Find the first ISO anywhere under OUT (depth ≤ 3)
+          SRC="$(find "${OUT}" -maxdepth 3 -type f -name '*.iso' | head -n1 || true)"
           if [[ -z "${SRC}" ]]; then
-            echo "No ISO found in ${OUT}"
+            echo "No ISO found under ${OUT}"
             echo "Contents:"
-            find "${OUT}" -maxdepth 2 -type f -print || true
+            find "${OUT}" -maxdepth 3 -type f -print || true
             exit 1
           fi
 
-          mv -v "${SRC}" "${OUT}/${{ steps.names.outputs.base }}.iso"
+          DEST="${OUT}/${{ steps.names.outputs.base }}.iso"
+          echo "Renaming:"
+          echo "  ${SRC}"
+          echo "   -> ${DEST}"
+          mv -v "${SRC}" "${DEST}"
 
-          if compgen -G "${OUT}/*.sha256sum" > /dev/null; then
-            for f in "${OUT}"/*.sha256sum; do
-              mv -v "${f}" "${OUT}/${{ steps.names.outputs.base }}.sha256sum"
-            done
+          # Optionally move/rename a checksum file if present (sha256 or sha256sum)
+          CHK="$(find "${OUT}" -maxdepth 3 -type f \( -name '*.sha256sum' -o -name '*.sha256' \) | head -n1 || true)"
+          if [[ -n "${CHK}" ]]; then
+            NEWCHK="${DEST%.*}.sha256sum"
+            echo "Renaming checksum:"
+            echo "  ${CHK}"
+            echo "   -> ${NEWCHK}"
+            mv -v "${CHK}" "${NEWCHK}"
           fi
 
           echo "Final contents of ${OUT}:"
-          ls -l "${OUT}"
-
-      - name: Upload ISO artifact
-        if: github.event_name != 'pull_request'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: ${{ steps.names.outputs.base }}
-          path: ${{ steps.build.outputs.output-directory }}/*
-          if-no-files-found: error
-          retention-days: 7
-          compression-level: 0
-          overwrite: true
+          find "${OUT}" -maxdepth 2 -type f -print
