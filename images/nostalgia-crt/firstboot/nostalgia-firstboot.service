@@ -3,6 +3,7 @@ Description=Nostalgia OS first-boot setup
 After=network-online.target systemd-user-sessions.service
 Wants=network-online.target
 Before=display-manager.service graphical.target
+ConditionPathExists=/usr/lib/nostalgia/10-firstboot.sh
 
 [Service]
 Type=oneshot

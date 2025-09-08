@@ -26,3 +26,11 @@ RUN install -d /etc/plymouth && \
       'Theme=nostalgia' \
       'ShowDelay=0' \
       > /etc/plymouth/plymouthd.conf
+
+# Video player for Gaming Mode intro/outro
+RUN rpm-ostree install mpv && ostree container commit
+
+# Copy intro/outro clips into the image (MOV or MP4 are fine)
+COPY images/nostalgia-crt/gamescope/media /usr/share/nostalgia/media
+
+RUN chmod +x /usr/local/bin/nostalgia-gamescope-session

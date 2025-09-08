@@ -16,6 +16,15 @@ if [[ -f "/usr/share/nostalgia/branding/wallpaper.png" ]]; then
   install -D -m 0644 /usr/share/nostalgia/branding/wallpaper.png /usr/share/wallpapers/Nostalgia.png
 fi
 
+# Ensure directories
+install -d -m 0755 /usr/share/nostalgia/scripts
+install -d -m 0755 /etc/skel/.config/autostart
+
+# Copy wallpaper autostart (for NEW users created after install)
+if [[ -f /usr/share/nostalgia/branding/wallpaper.png ]]; then
+  install -m 0755 /usr/share/nostalgia/scripts/apply-wallpaper.sh /usr/share/nostalgia/scripts/apply-wallpaper.sh || true
+fi
+
 # 2) Hostname suffix (_OS)
 if command -v hostnamectl >/dev/null 2>&1; then
   current="$(hostname)"

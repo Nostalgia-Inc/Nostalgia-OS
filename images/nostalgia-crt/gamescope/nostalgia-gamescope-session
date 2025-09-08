@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Gamescope parameters: tweak to your device (refresh rate, full screen, etc.)
+GAMESCOPE_ARGS=(-e -f)  # -e borderless, -f full-screen
+# Example: to force 60 Hz and a specific output, uncomment:
+# GAMESCOPE_ARGS+=(-r 60 -O DP-1)
+
+VIDEO_DIR="/usr/share/nostalgia/media"
+INTRO="${VIDEO_DIR}/boot-intro.mov"
+OUTRO="${VIDEO_DIR}/boot-outro.mov"
+
+# Quiet, full-screen playback with easy skip (ESC/Space/Enter)
+MPV=(mpv --fs --no-osc --no-osd-bar --really-quiet --loop-file=no --keep-open=no)
+
+launch_cmd=()
+
+# Prefer Flatpak Steam (if present), fallback to system steam
+if command -v flatpak >/dev/null 2>&1 && flatpak info com.valvesoftware.Steam >/dev/null 2>&1; then
+  launch_cmd=(flatpak run com.valvesoftware.Steam -gamepadui)
+elif command -v steam >/dev/null 2>&1; then
+  launch_cmd=(steam -gamepadui)
+else
+  echo "Steam not installed. Install with: flatpak install flathub com.valvesoftware.Steam" >&2
+  launch_cmd=(bash -lc "sleep 3; exit 1")
+fi
+
+# Run everything INSIDE gamescope
+exec gamescope "${GAMESCOPE_ARGS[@]}" -- bash -lc '
+  set -euo pipefail
+  INTRO="'"$INTRO"'"
+  OUTRO="'"$OUTRO"'"
+
+  # Intro video (if present)
+  if [[ -f "$INTRO" ]]; then
+    '"${MPV[*]}"' "$INTRO" || true
+  fi
+
+  # Launch Steam Deck UI
+  '"${launch_cmd[*]}"'
+  ret=$?
+
+  # Outro video (if present)
+  if [[ -f "$OUTRO" ]]; then
+    '"${MPV[*]}"' "$OUTRO" || true
+  fi
+
+  exit $ret
+'
