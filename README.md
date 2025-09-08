@@ -1,4 +1,4 @@
-# Nostalgia OS
+# ***Nostalgia OS***
 
 # Purpose
 
@@ -8,7 +8,7 @@ This Operating System is build for custom built ISO configurations of the variou
 This OS will have multiple sub systems to install and boot from depending on the requirements and specifacations of the hardware installed on. 
 
 
-# Nostalgia CRT
+# **Nostalgia CRT**
 
 This image is built purposely built for the Lattepanda Delta 3 Single Board Computer. 
 
@@ -25,9 +25,9 @@ This image is built purposely built for the Lattepanda Delta 3 Single Board Comp
 - [Main][(https://github.com/ublue-os/main/)]
 - [Bazzite][(https://bazzite.gg/)]
 
-## Current Modifacations
+## **Current Modifacations**
 
-### 10-nostalgia-setup.sh
+### **10-nostalgia-setup.sh**
   - Custom Default User - [Successful]
   - Custom Default Wallpaper - [Loading...]
   - Download and Install Arduino IDE - [Loading...]
@@ -35,14 +35,15 @@ This image is built purposely built for the Lattepanda Delta 3 Single Board Comp
   - Configure Custom GRUB Theme - [Loading...]
   - Power and Performance Tweaks - [Loading...]
 
+****
 
-# Nostalgia Arcade - Loading In Progress...
+# **Nostalgia Arcade - Loading In Progress...**
 
 This image is meant for more of a standard system install on non specific hardware. 
 
-## Current Modifacations
+## **Current Modifacations**
 
-### 10-nostalgia-setup.sh
+### **10-nostalgia-setup.sh**
   - Custom Default User - [Successful]
   - Custom Default Wallpaper - [Loading...]
   - Configure Custom Nostalgia ARCADE Plymouth Theme - [Loading...]
