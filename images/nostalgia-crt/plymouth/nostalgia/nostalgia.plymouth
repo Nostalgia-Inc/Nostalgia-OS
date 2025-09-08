@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=Nostalgia OS
+Description=Nostalgia boot splash
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/nostalgia
+ScriptFile=/usr/share/plymouth/themes/nostalgia/nostalgia.script

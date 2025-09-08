@@ -13,8 +13,16 @@ COPY images/nostalgia-crt/firstboot/10-nostalgia-setup.sh      /usr/lib/nostalgi
 COPY images/nostalgia-crt/firstboot/nostalgia-firstboot.service /etc/systemd/system/nostalgia-firstboot.service
 # (optional, if you ship autologin)
 COPY images/nostalgia-crt/firstboot/00-sddm-autologin.conf     /etc/sddm.conf.d/00-autologin.conf
-
+COPY images/nostalgia-crt/plymouth/nostalgia /usr/share/plymouth/themes/nostalgia
 
 # Make first-boot script executable and enable the unit
 RUN chmod +x /usr/lib/nostalgia/10-firstboot.sh && \
     systemctl enable nostalgia-firstboot.service
+
+# Set Nostalgia Plymouth Theme 
+RUN install -d /etc/plymouth && \
+    printf '%s\n' \
+      '[Daemon]' \
+      'Theme=nostalgia' \
+      'ShowDelay=0' \
+      > /etc/plymouth/plymouthd.conf

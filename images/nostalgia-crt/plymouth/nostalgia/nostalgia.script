@@ -1,0 +1,45 @@
+// Nostalgia OS Plymouth script
+Window.SetBackgroundTopColor (0.02, 0.02, 0.02);
+Window.SetBackgroundBottomColor(0.02, 0.02, 0.02);
+
+image_dir = "/usr/share/plymouth/themes/nostalgia";
+
+bg = Image(image_dir + "/background.png");
+bg_scale = Math.Min(Window.GetWidth() / bg.GetWidth(), Window.GetHeight() / bg.GetHeight());
+bg.Scale(bg.GetWidth()*bg_scale, bg.GetHeight()*bg_scale);
+bg_sprite = Sprite(bg);
+bg_sprite.SetZ(-1000);
+bg_sprite.Move(Window.GetWidth()/2 - bg.GetWidth()/2*bg_scale,
+               Window.GetHeight()/2 - bg.GetHeight()/2*bg_scale);
+
+logo = Image(image_dir + "/logo.png");
+logo_scale = Math.Min(1.0, Window.GetWidth()/1920.0);
+logo.Scale(logo.GetWidth()*logo_scale, logo.GetHeight()*logo_scale);
+logo_sprite = Sprite(logo);
+logo_sprite.SetZ(-500);
+logo_sprite.Move(Window.GetWidth()/2 - logo.GetWidth()/2,
+                 Window.GetHeight()*0.35 - logo.GetHeight()/2);
+
+// Spinner as a horizontal sprite sheet (60x60px * 30 frames)
+spinner_img = Image(image_dir + "/spinner.png");
+frame_w = 60; frame_h = 60; frames = 30; fps = 24;
+spinner_sprite = Sprite();
+spinner_sprite.SetZ(-400);
+spinner_sprite.SetImage(spinner_img, 0, 0, frame_w, frame_h);
+spinner_x = Window.GetWidth()/2 - frame_w/2;
+spinner_y = Window.GetHeight()*0.62 - frame_h/2;
+spinner_sprite.Move(spinner_x, spinner_y);
+
+current = 0;
+fun animate() {
+  spinner_sprite.SetImage(spinner_img, current*frame_w, 0, frame_w, frame_h);
+  current = (current + 1) % frames;
+  Plymouth.SetTimer(1.0 / fps, animate);
+}
+animate();
+
+fun progress_callback(progress) { }
+Plymouth.SetBootProgressFunction(progress_callback);
+
+fun message_callback(msg) { }
+Plymouth.SetMessageFunction(message_callback);
