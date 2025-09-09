@@ -34,3 +34,13 @@ RUN rpm-ostree install mpv && ostree container commit
 COPY images/nostalgia-crt/gamescope/media /usr/share/nostalgia/media
 
 RUN chmod +x /usr/local/bin/nostalgia-gamescope-session
+
+
+# Ensure target dir exists (optional but nice)
+RUN install -d /usr/share/nostalgia/media
+
+
+# Copy wrapper and session BEFORE chmod
+COPY images/nostalgia-crt/gamescope/nostalgia-gamescope-session /usr/local/bin/nostalgia-gamescope-session
+RUN chmod +x /usr/local/bin/nostalgia-gamescope-session
+COPY images/nostalgia-crt/gamescope/nostalgia-gaming.desktop /usr/share/wayland-sessions/nostalgia-gaming.desktop

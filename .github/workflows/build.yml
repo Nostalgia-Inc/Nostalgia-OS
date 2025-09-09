@@ -114,7 +114,7 @@ jobs:
         with:
           containerfiles: images/nostalgia-crt/Containerfile   
           context: .                       
-          image: nostalgia-os
+          image: nostalgia-crt
           tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
           oci: false
