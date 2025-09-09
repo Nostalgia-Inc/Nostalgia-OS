@@ -5,35 +5,31 @@ LOG=/var/log/nostalgia-firstboot.log
 exec >>"$LOG" 2>&1
 echo "[Nostalgia] first-boot starting at $(date -Is)"
 
-# Idempotency guard
 STATE_DIR=/var/lib/nostalgia
 DONE_FLAG="$STATE_DIR/firstboot.done"
 mkdir -p "$STATE_DIR"
-if [[ -f "$DONE_FLAG" ]]; then
-  echo "[Nostalgia] first-boot already completed, exiting."
-  exit 0
+[[ -f "$DONE_FLAG" ]] && { echo "[Nostalgia] already done"; exit 0; }
+
+# Make sure dirs exist
+install -d /usr/share/nostalgia /usr/share/nostalgia/media /usr/lib/nostalgia
+
+# Add Flathub and install Arduino IDE (Steam is already handled by Deck)
+nm-online -q || true
+flatpak --system remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo || true
+flatpak --system install -y --noninteractive flathub cc.arduino.arduinoide || true
+
+# Wallpaper example for KDE (system default for new users)
+# If you ship a wallpaper at /usr/share/nostalgia/branding/wallpaper.png,
+# copy or set it via a plasma-defaults file (simple default copy shown):
+if [[ -f /usr/share/nostalgia/branding/wallpaper.png ]]; then
+  install -D /usr/share/nostalgia/branding/wallpaper.png \
+            /usr/share/wallpapers/Nostalgia.png
 fi
 
-# Ensure dirs we touch exist; never fail on absent paths
-install -d /usr/share/nostalgia
-install -d /usr/share/nostalgia/media
-install -d /usr/lib/nostalgia
+# Hostname suffix
+current="$(cat /etc/hostname 2>/dev/null || hostname)"
+echo "${current}_CRT" > /etc/hostname
 
-# Optional: if you keep helper scripts in /usr/lib/nostalgia/scripts later
-install -d /usr/lib/nostalgia/scripts || true
-
-# Make sure networking is up enough for Flatpak
-nm-online -q || true
-
-# Add Flathub and install Steam + Arduino IDE as system flatpaks
-flatpak --system remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo || true
-flatpak --system install -y --noninteractive flathub com.valvesoftware.Steam cc.arduino.arduinoide || true
-
-# (EmuDeck is interactive; we’ll do it as a user step later.)
-
-# Mark done and disable the unit
 touch "$DONE_FLAG"
 systemctl disable nostalgia-firstboot.service || true
-
 echo "[Nostalgia] first-boot finished at $(date -Is)"
-exit 0

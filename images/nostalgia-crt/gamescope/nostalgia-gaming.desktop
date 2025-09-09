@@ -1,6 +1,0 @@
-[Desktop Entry]
-Name=Nostalgia Gaming Mode
-Comment=Launch Steam Deck UI (gamescope)
-Exec=/usr/local/bin/nostalgia-gamescope-session
-Type=Application
-DesktopNames=gamescope

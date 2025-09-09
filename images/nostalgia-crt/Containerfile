@@ -1,39 +1,35 @@
-FROM ghcr.io/ublue-os/bazzite:latest
+# 1) Switch base to the Deck edition
+FROM ghcr.io/ublue-os/bazzite-deck:latest
 
 LABEL org.opencontainers.image.title="Nostalgia OS"
-LABEL org.opencontainers.image.description="KDE-based image with Arduino IDE (Flatpak) and EmuDeck setup on first boot"
+LABEL org.opencontainers.image.description="Deck-style Gaming Mode with Nostalgia branding"
 LABEL org.opencontainers.image.authors="Nostalgia Inc."
 LABEL org.opencontainers.image.source="https://github.com/Nostalgia-Inc/Nostalgia-OS"
 
-# ── Branding, Plymouth theme, and first-boot bits ───────────────────────────────
-# (Build context expected to be the repo root: context: .)
-COPY common/                                            /usr/share/nostalgia/
-COPY images/nostalgia-crt/plymouth/nostalgia            /usr/share/plymouth/themes/nostalgia
+# 2) Branding (Plymouth + your shared assets)
+COPY common/                                   /usr/share/nostalgia/
+COPY images/nostalgia-crt/plymouth/nostalgia   /usr/share/plymouth/themes/nostalgia
 
-# First-boot unit & script (place unit under /usr/lib on ostree systems)
+# Pick Nostalgia plymouth at boot
+RUN install -d /etc/plymouth && \
+    printf '%s\n[Daemon]\nTheme=nostalgia\nShowDelay=0\n' > /etc/plymouth/plymouthd.conf
+
+# 3) (Optional) SDDM theme selection for login background
+#    Only keep if you ship /usr/share/sddm/themes/nostalgia
+# COPY images/nostalgia-crt/sddm/nostalgia /usr/share/sddm/themes/nostalgia
+# RUN install -d /etc/sddm.conf.d && \
+#     printf '%s\n[Theme]\nCurrent=nostalgia\n' > /etc/sddm.conf.d/10-nostalgia-theme.conf
+
+# 4) First-boot: slim down to *your* extras (Arduino, wallpaper, hostname suffix)
 COPY images/nostalgia-crt/firstboot/10-nostalgia-setup.sh       /usr/lib/nostalgia/10-firstboot.sh
 COPY images/nostalgia-crt/firstboot/nostalgia-firstboot.service /usr/lib/systemd/system/nostalgia-firstboot.service
 RUN chmod +x /usr/lib/nostalgia/10-firstboot.sh && \
     ln -sv /usr/lib/systemd/system/nostalgia-firstboot.service \
            /etc/systemd/system/multi-user.target.wants/nostalgia-firstboot.service || true
 
-# (Optional) SDDM autologin — ONLY keep this line if the file exists in your repo
-# COPY images/nostalgia-crt/firstboot/00-sddm-autologin.conf /etc/sddm.conf.d/00-autologin.conf
+# 5) (Optional) Boot / shutdown videos used by your first-boot or session scripts
+#    You can still ship them for later use if desired:
+# COPY images/nostalgia-crt/gamescope/media/ /usr/share/nostalgia/media/
 
-# Set Plymouth default theme early so initramfs picks it up
-RUN install -d /etc/plymouth && \
-    printf '%s\n[Daemon]\nTheme=nostalgia\nShowDelay=0\n' > /etc/plymouth/plymouthd.conf
-
-# ── Gamescope session + intro/outro playback ───────────────────────────────────
-# Install gamescope + Xwayland and mpv for intro/outro clips
-RUN rpm-ostree install gamescope xorg-x11-server-Xwayland mpv && \
-    ostree container commit
-
-# Ensure media target exists, then copy your videos (ok if empty but dir must exist)
-RUN install -d /usr/share/nostalgia/media
-COPY images/nostalgia-crt/gamescope/media/               /usr/share/nostalgia/media/
-
-# Copy the session wrapper and make it executable, then install the session file
-COPY images/nostalgia-crt/gamescope/nostalgia-gamescope-session /usr/local/bin/nostalgia-gamescope-session
-RUN chmod +x /usr/local/bin/nostalgia-gamescope-session
-COPY images/nostalgia-crt/gamescope/nostalgia-gaming.desktop    /usr/share/wayland-sessions/nostalgia-gaming.desktop
+# 6) Any extra tools you want on the base image (mpv is handy for playing clips)
+RUN rpm-ostree install mpv && ostree container commit
