@@ -1,14 +1,14 @@
 [Unit]
 Description=Nostalgia OS first-boot setup
-After=network-online.target systemd-user-sessions.service
+After=network-online.target
 Wants=network-online.target
 Before=display-manager.service graphical.target
-ConditionPathExists=/usr/lib/nostalgia/10-firstboot.sh
 
 [Service]
 Type=oneshot
-ExecStart=/usr/lib/nostalgia/10-firstboot.sh
-RemainAfterExit=no
+ExecStart=/usr/lib/nostalgia/10-nostalgia-setup.sh
+RemainAfterExit=yes
+TimeoutStopFailureMode=abort
 
 [Install]
 WantedBy=multi-user.target

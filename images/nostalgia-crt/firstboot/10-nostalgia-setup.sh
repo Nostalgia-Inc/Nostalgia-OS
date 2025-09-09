@@ -1,45 +1,39 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "[Nostalgia OS] First-boot setup starting..."
+LOG=/var/log/nostalgia-firstboot.log
+exec >>"$LOG" 2>&1
+echo "[Nostalgia] first-boot starting at $(date -Is)"
 
-# 0) One-shot guard
-STAMP="/var/lib/nostalgia-firstboot.done"
-if [[ -f "$STAMP" ]]; then
-  echo "[Nostalgia OS] First-boot already completed. Exiting."
+# Idempotency guard
+STATE_DIR=/var/lib/nostalgia
+DONE_FLAG="$STATE_DIR/firstboot.done"
+mkdir -p "$STATE_DIR"
+if [[ -f "$DONE_FLAG" ]]; then
+  echo "[Nostalgia] first-boot already completed, exiting."
   exit 0
 fi
 
-# 1) Branding: wallpaper & SDDM background (files must be provided in ./common)
-# Desktop wallpaper asset copied to /usr/share/wallpapers by Containerfile or here:
-if [[ -f "/usr/share/nostalgia/branding/wallpaper.png" ]]; then
-  install -D -m 0644 /usr/share/nostalgia/branding/wallpaper.png /usr/share/wallpapers/Nostalgia.png
-fi
+# Ensure dirs we touch exist; never fail on absent paths
+install -d /usr/share/nostalgia
+install -d /usr/share/nostalgia/media
+install -d /usr/lib/nostalgia
 
-# Ensure directories
-install -d -m 0755 /usr/share/nostalgia/scripts
-install -d -m 0755 /etc/skel/.config/autostart
+# Optional: if you keep helper scripts in /usr/lib/nostalgia/scripts later
+install -d /usr/lib/nostalgia/scripts || true
 
-# Copy wallpaper autostart (for NEW users created after install)
-if [[ -f /usr/share/nostalgia/branding/wallpaper.png ]]; then
-  install -m 0755 /usr/share/nostalgia/scripts/apply-wallpaper.sh /usr/share/nostalgia/scripts/apply-wallpaper.sh || true
-fi
+# Make sure networking is up enough for Flatpak
+nm-online -q || true
 
-# 2) Hostname suffix (_OS)
-if command -v hostnamectl >/dev/null 2>&1; then
-  current="$(hostname)"
-  [[ "$current" != *_OS ]] && hostnamectl set-hostname "${current}_OS" || true
-fi
+# Add Flathub and install Steam + Arduino IDE as system flatpaks
+flatpak --system remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo || true
+flatpak --system install -y --noninteractive flathub com.valvesoftware.Steam cc.arduino.arduinoide || true
 
-# 3) Flatpak: make sure flathub is present, then install Arduino IDE system-wide
-if command -v flatpak >/dev/null 2>&1; then
-  flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo || true
-  # Arduino IDE
-  flatpak install -y --system flathub cc.arduino.arduinoide || true
-  # EmuDeck is user-scoped and interactive; enable a desktop file to prompt the user later (optional).
-fi
+# (EmuDeck is interactive; we’ll do it as a user step later.)
 
-# 4) Disable the unit and stamp completion
+# Mark done and disable the unit
+touch "$DONE_FLAG"
 systemctl disable nostalgia-firstboot.service || true
-touch "$STAMP"
-echo "[Nostalgia OS] First-boot setup completed."
+
+echo "[Nostalgia] first-boot finished at $(date -Is)"
+exit 0
