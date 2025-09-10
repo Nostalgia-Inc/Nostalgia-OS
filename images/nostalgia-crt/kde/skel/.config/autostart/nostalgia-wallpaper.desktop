@@ -1,6 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=Nostalgia: Apply Wallpaper
-Exec=/usr/share/nostalgia/scripts/apply-wallpaper.sh
-OnlyShowIn=KDE;
-X-GNOME-Autostart-enabled=true

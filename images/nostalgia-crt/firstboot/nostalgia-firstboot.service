@@ -2,13 +2,14 @@
 Description=Nostalgia OS first-boot setup
 After=network-online.target
 Wants=network-online.target
-Before=display-manager.service graphical.target
+Before=graphical.target
 
 [Service]
 Type=oneshot
 ExecStart=/usr/lib/nostalgia/10-nostalgia-setup.sh
 RemainAfterExit=yes
 TimeoutStopFailureMode=abort
+ConditionPathExists=!/var/lib/nostalgia/firstboot.done
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=graphical.target

@@ -8,28 +8,58 @@ echo "[Nostalgia] first-boot starting at $(date -Is)"
 STATE_DIR=/var/lib/nostalgia
 DONE_FLAG="$STATE_DIR/firstboot.done"
 mkdir -p "$STATE_DIR"
-[[ -f "$DONE_FLAG" ]] && { echo "[Nostalgia] already done"; exit 0; }
+if [[ -f "$DONE_FLAG" ]]; then
+  echo "[Nostalgia] first-boot already completed, exiting."
+  exit 0
+fi
 
-# Make sure dirs exist
+# Ensure key dirs exist
 install -d /usr/share/nostalgia /usr/share/nostalgia/media /usr/lib/nostalgia
 
-# Add Flathub and install Arduino IDE (Steam is already handled by Deck)
+# 1) Plymouth: ensure theme applied in initramfs for next boot
+if command -v plymouth-set-default-theme >/dev/null 2>&1; then
+  plymouth-set-default-theme nostalgia -R || true
+fi
+
+# 2) Arduino IDE (networked, runtime)
 nm-online -q || true
 flatpak --system remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo || true
 flatpak --system install -y --noninteractive flathub cc.arduino.arduinoide || true
 
-# Wallpaper example for KDE (system default for new users)
-# If you ship a wallpaper at /usr/share/nostalgia/branding/wallpaper.png,
-# copy or set it via a plasma-defaults file (simple default copy shown):
-if [[ -f /usr/share/nostalgia/branding/wallpaper.png ]]; then
-  install -D /usr/share/nostalgia/branding/wallpaper.png \
-            /usr/share/wallpapers/Nostalgia.png
+# 3) Game Mode intro/outro for EXISTING users (installer-created)
+INTRO=/usr/share/nostalgia/media/boot-intro.webm
+OUTRO=/usr/share/nostalgia/media/boot-outro.webm
+if [[ -f "$INTRO" || -f "$OUTRO" ]]; then
+  for H in /home/*; do
+    [[ -d "$H" ]] || continue
+    U="$(basename "$H")"
+    MOVES="$H/.steam/root/config/uioverrides/movies"
+    install -d "$MOVES"
+    [[ -f "$INTRO" ]] && ln -sf "$INTRO" "$MOVES/deck_startup.webm"
+    [[ -f "$OUTRO" ]] && ln -sf "$OUTRO" "$MOVES/deck_shutdown.webm"
+    chown -R "$U":"$U" "$H/.steam"
+  done
 fi
 
-# Hostname suffix
+# 4) KDE wallpaper for EXISTING users who don’t have one yet
+if [[ -f /usr/share/wallpapers/Nostalgia.png ]]; then
+  for H in /home/*; do
+    [[ -d "$H" ]] || continue
+    U="$(basename "$H")"
+    CFG="$H/.config/plasma-org.kde.plasma.desktop-appletsrc"
+    if [[ ! -f "$CFG" ]]; then
+      install -d "$H/.config"
+      printf '%s\n[Containments][1][Wallpaper][org.kde.image][General]\nImage=file:///usr/share/wallpapers/Nostalgia.png\n' > "$CFG"
+      chown -R "$U":"$U" "$H/.config"
+    fi
+  done
+fi
+
+# 5) Hostname suffix
 current="$(cat /etc/hostname 2>/dev/null || hostname)"
 echo "${current}_CRT" > /etc/hostname
 
 touch "$DONE_FLAG"
 systemctl disable nostalgia-firstboot.service || true
 echo "[Nostalgia] first-boot finished at $(date -Is)"
+exit 0
