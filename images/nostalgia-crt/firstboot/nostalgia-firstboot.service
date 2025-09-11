@@ -6,7 +6,7 @@ Before=graphical.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/lib/nostalgia/10-firstboot.sh
+ExecStart=/usr/lib/nostalgia/10-nostalgia-setup.sh
 RemainAfterExit=yes
 TimeoutStopFailureMode=abort
 ConditionPathExists=!/var/lib/nostalgia/firstboot.done
