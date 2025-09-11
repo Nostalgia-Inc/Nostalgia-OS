@@ -24,9 +24,9 @@ RUN install -d /etc/plymouth && \
 # ── KDE default wallpaper for NEW users via /etc/skel ─────────────────────────
 # If you ship /usr/share/nostalgia/branding/wallpaper.png, set the default
 RUN if [ -f /usr/share/nostalgia/branding/wallpaper.png ]; then \
-      install -D /usr/share/nostalgia/branding/wallpaper.png /usr/share/wallpapers/Nostalgia.png && \
+      install -D /usr/share/nostalgia/branding/wallpaper.png /usr/share/nostalgia/Nostalgia.png && \
       install -d /etc/skel/.config && \
-      printf '%s\n[Containments][1][Wallpaper][org.kde.image][General]\nImage=file:///usr/share/wallpapers/Nostalgia.png\n' \
+      printf '%s\n[Containments][1][Wallpaper][org.kde.image][General]\nImage=file:///usr/share/nostalgia/Nostalgia.png\n' \
         > /etc/skel/.config/plasma-org.kde.plasma.desktop-appletsrc ; \
     fi
 
