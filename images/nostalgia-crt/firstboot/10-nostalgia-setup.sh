@@ -1,80 +1,59 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-LOG=/var/log/nostalgia-firstboot.log
-exec >>"$LOG" 2>&1
-echo "[Nostalgia] first-boot starting at $(date -Is)"
+log(){ echo "[Nostalgia first-boot] $*"; }
 
-STATE_DIR=/var/lib/nostalgia
-DONE_FLAG="$STATE_DIR/firstboot.done"
-mkdir -p "$STATE_DIR"
-if [[ -f "$DONE_FLAG" ]]; then
-  echo "[Nostalgia] already completed; exiting."
-  exit 0
+# ensure our work dirs exist
+install -d /var/lib/nostalgia
+
+# --- 1) Ensure Flathub and Arduino IDE are present --------------------------------
+if ! flatpak remotes --columns=name | grep -qx flathub; then
+  log "Adding Flathub remote"
+  flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
 fi
 
-# Ensure dirs exist
-install -d /usr/share/nostalgia /usr/share/nostalgia/media /usr/lib/nostalgia /etc/sddm.conf.d
-
-# 1) Plymouth: rebuild initramfs so theme shows on next boot
-if command -v plymouth-set-default-theme >/dev/null 2>&1; then
-  plymouth-set-default-theme nostalgia -R || true
+if ! flatpak info cc.arduino.arduinoide >/dev/null 2>&1; then
+  log "Installing Arduino IDE (Flatpak)"
+  flatpak install -y --noninteractive flathub cc.arduino.arduinoide || log "Arduino install failed (continuing)"
+else
+  log "Arduino already installed"
 fi
 
-# 2) KDE wallpaper: FORCE set for existing users (keep for new via /etc/skel)
-WALL=/usr/share/wallpapers/Nostalgia.png
-if [[ -f /usr/share/nostalgia/branding/wallpaper.png && ! -f "$WALL" ]]; then
-  install -D /usr/share/nostalgia/branding/wallpaper.png "$WALL"
+# --- 2) Apply wallpaper for existing 'nostalgia' user (if any) ---------------------
+WALLPAPER="/usr/share/nostalgia/Nostalgia.png"
+TARGET_USER="nostalgia"
+
+if id "$TARGET_USER" >/dev/null 2>&1 && [ -f "$WALLPAPER" ]; then
+  USER_HOME="$(getent passwd "$TARGET_USER" | cut -d: -f6)"
+  # Try KDE helper if available (user context)
+  if command -v rsync >/dev/null; then :; fi
+  log "Setting wallpaper for $TARGET_USER"
+  install -d "$USER_HOME/.config"
+  # minimal plasma config injection (keeps existing file if present)
+  CFG="$USER_HOME/.config/plasma-org.kde.plasma.desktop-appletsrc"
+  if ! grep -q 'Image=file:///usr/share/nostalgia/Nostalgia.png' "$CFG" 2>/dev/null; then
+    {
+      echo "[Containments][1][Wallpaper][org.kde.image][General]"
+      echo "Image=file:///usr/share/nostalgia/Nostalgia.png"
+    } >> "$CFG"
+    chown "$TARGET_USER:$TARGET_USER" "$CFG"
+  fi
 fi
 
-if [[ -f "$WALL" ]]; then
-  for H in /home/*; do
-    [[ -d "$H" ]] || continue
-    U="$(basename "$H")"
-    CFG="$H/.config/plasma-org.kde.plasma.desktop-appletsrc"
-    install -d "$H/.config"
-
-    # If config exists, replace Image= line; otherwise create minimal file
-    if [[ -f "$CFG" ]]; then
-      if grep -q '^Image=' "$CFG"; then
-        sed -i 's#^Image=.*#Image=file:///usr/share/wallpapers/Nostalgia.png#' "$CFG"
-      else
-        printf '\n[Containments][1][Wallpaper][org.kde.image][General]\nImage=file:///usr/share/wallpapers/Nostalgia.png\n' >> "$CFG"
-      fi
-    else
-      printf '%s\n[Containments][1][Wallpaper][org.kde.image][General]\nImage=file:///usr/share/wallpapers/Nostalgia.png\n' > "$CFG"
-    fi
-    chown -R "$U:$U" "$H/.config"
-  done
+# --- 3) Seed Steam intro/outro videos for existing user ----------------------------
+if id "$TARGET_USER" >/dev/null 2>&1; then
+  USER_HOME="$(getent passwd "$TARGET_USER" | cut -d: -f6)"
+  MOV_DIR="$USER_HOME/.steam/root/config/uioverrides/movies"
+  install -d "$MOV_DIR"
+  if [ -f /usr/share/nostalgia/media/boot-intro.webm ]; then
+    ln -sf /usr/share/nostalgia/media/boot-intro.webm "$MOV_DIR/deck_startup.webm"
+  fi
+  if [ -f /usr/share/nostalgia/media/boot-outro.webm ]; then
+    ln -sf /usr/share/nostalgia/media/boot-outro.webm "$MOV_DIR/deck_shutdown.webm"
+  fi
+  chown -R "$TARGET_USER:$TARGET_USER" "$USER_HOME/.steam"
 fi
 
-# 3) Network + Arduino (Flatpak)
-nm-online -q || true
-flatpak --system remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo || true
-flatpak --system install -y --noninteractive flathub cc.arduino.arduinoide || true
-
-# 4) Steam intro/outro (for EXISTING users)
-INTRO=/usr/share/nostalgia/media/boot-intro.webm
-OUTRO=/usr/share/nostalgia/media/boot-outro.webm
-if [[ -f "$INTRO" || -f "$OUTRO" ]]; then
-  for H in /home/*; do
-    [[ -d "$H" ]] || continue
-    U="$(basename "$H")"
-
-    # Create the Valve uioverrides path even if Steam hasn't been launched yet
-    MOVES="$H/.steam/root/config/uioverrides/movies"
-    install -d "$MOVES"
-    [[ -f "$INTRO" ]] && ln -sf "$INTRO" "$MOVES/deck_startup.webm"
-    [[ -f "$OUTRO" ]] && ln -sf "$OUTRO" "$MOVES/deck_shutdown.webm"
-    chown -R "$U:$U" "$H/.steam"
-  done
-fi
-
-# 5) Hostname suffix
-current="$(cat /etc/hostname 2>/dev/null || hostname)"
-echo "${current}_CRT" > /etc/hostname
-
-touch "$DONE_FLAG"
-systemctl disable nostalgia-firstboot.service || true
-echo "[Nostalgia] first-boot finished at $(date -Is)"
-exit 0
+# --- 4) Mark as done so it never re-runs -------------------------------------------
+touch /var/lib/nostalgia/firstboot.done
+log "Completed successfully."

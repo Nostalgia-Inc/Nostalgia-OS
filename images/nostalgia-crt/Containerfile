@@ -5,44 +5,52 @@ LABEL org.opencontainers.image.description="Bazzite Deck base, Nostalgia brandin
 LABEL org.opencontainers.image.authors="Nostalgia Inc."
 LABEL org.opencontainers.image.source="https://github.com/Nostalgia-Inc/Nostalgia-OS"
 
-# Use bash for conditionals and pipefail during RUN
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-
-# ── Shared branding ───────────────────────────────────────────────────────────
+# ── Copy shared branding (wallpapers, logos, etc.) ────────────────────────────
+# path exists in repo: common/...
 COPY common/ /usr/share/nostalgia/
 
-# ── Plymouth theme + config ───────────────────────────────────────────────────
+# ── Plymouth theme (build-time) ───────────────────────────────────────────────
+# path exists in repo: images/nostalgia-crt/plymouth/nostalgia/*
 COPY images/nostalgia-crt/plymouth/nostalgia /usr/share/plymouth/themes/nostalgia
 RUN install -d /etc/plymouth && \
     printf '%s\n[Daemon]\nTheme=nostalgia\nShowDelay=0\n' > /etc/plymouth/plymouthd.conf
 
-# ── KDE default wallpaper for NEW users via /etc/skel ─────────────────────────
-RUN if [[ -f /usr/share/nostalgia/branding/wallpaper.png ]]; then \
+# ── KDE default wallpaper for new users via /etc/skel ─────────────────────────
+# if you ship: common/branding/wallpaper.png
+RUN if [ -f /usr/share/nostalgia/branding/wallpaper.png ]; then \
       install -D /usr/share/nostalgia/branding/wallpaper.png /usr/share/nostalgia/Nostalgia.png && \
       install -d /etc/skel/.config && \
       printf '%s\n[Containments][1][Wallpaper][org.kde.image][General]\nImage=file:///usr/share/nostalgia/Nostalgia.png\n' \
         > /etc/skel/.config/plasma-org.kde.plasma.desktop-appletsrc ; \
     fi
 
-# ── Ship Game Mode intro/outro files ──────────────────────────────────────────
-# Ensure the directory exists even if the repo folder is empty
+# ── Ship Game Mode intro/outro videos (Steam Deck style overrides) ────────────
+# put .webm files here in the repo: images/nostalgia-crt/gamescope/media/
 RUN install -d /usr/share/nostalgia/media
-# If images/nostalgia-crt/gamescope/media is empty, add a .gitkeep so COPY doesn’t fail
 COPY images/nostalgia-crt/gamescope/media/ /usr/share/nostalgia/media/
 
-# Seed NEW users with Steam uioverrides pointing at our clips (if present)
+# seed new users with steam “ui override” videos
 RUN install -d /etc/skel/.steam/root/config/uioverrides/movies && \
-    [[ -f /usr/share/nostalgia/media/boot-intro.webm  ]] && ln -sf /usr/share/nostalgia/media/boot-intro.webm  /etc/skel/.steam/root/config/uioverrides/movies/deck_startup.webm  || true && \
-    [[ -f /usr/share/nostalgia/media/boot-outro.webm ]] && ln -sf /usr/share/nostalgia/media/boot-outro.webm /etc/skel/.steam/root/config/uioverrides/movies/deck_shutdown.webm || true
+    if [ -f /usr/share/nostalgia/media/boot-intro.webm ]; then \
+      ln -sf /usr/share/nostalgia/media/boot-intro.webm \
+             /etc/skel/.steam/root/config/uioverrides/movies/deck_startup.webm ; \
+    fi && \
+    if [ -f /usr/share/nostalgia/media/boot-outro.webm ]; then \
+      ln -sf /usr/share/nostalgia/media/boot-outro.webm \
+             /etc/skel/.steam/root/config/uioverrides/movies/deck_shutdown.webm ; \
+    fi
 
-# ── First-boot: runtime/network tasks only ────────────────────────────────────
-COPY images/nostalgia-crt/firstboot/10-nostalgia-setup.sh       /usr/lib/nostalgia/10-nostalgia-setup.sh
-COPY images/nostalgia-crt/firstboot/nostalgia-firstboot.service /usr/lib/systemd/system/nostalgia-firstboot.service
+# ── First-boot bits (runtime-only work like Flatpaks, per-user tweaks) ────────
+COPY images/nostalgia-crt/firstboot/10-nostalgia-setup.sh \
+     /usr/lib/nostalgia/10-nostalgia-setup.sh
+COPY images/nostalgia-crt/firstboot/nostalgia-firstboot.service \
+     /usr/lib/systemd/system/nostalgia-firstboot.service
 
-# Make script executable and enable the service via static symlink (works in containers)
+# first-boot enable (static symlink so it survives ostree)
 RUN chmod +x /usr/lib/nostalgia/10-nostalgia-setup.sh && \
-    ln -sv /usr/lib/systemd/system/nostalgia-firstboot.service \
-           /etc/systemd/system/graphical.target.wants/nostalgia-firstboot.service || true
+    install -d /etc/systemd/system/graphical.target.wants && \
+    ln -sf /usr/lib/systemd/system/nostalgia-firstboot.service \
+           /etc/systemd/system/graphical.target.wants/nostalgia-firstboot.service
 
-# ── Tools we need at runtime ──────────────────────────────────────────────────
+# helper tools used by our first-boot script
 RUN rpm-ostree install mpv && ostree container commit
