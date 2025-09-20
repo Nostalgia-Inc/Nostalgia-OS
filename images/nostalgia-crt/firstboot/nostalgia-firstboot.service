@@ -2,12 +2,11 @@
 Description=Nostalgia OS first-boot setup
 Wants=network-online.target
 After=network-online.target display-manager.service
-ConditionPathExists=!/var/lib/nostalgia/firstboot.done
 
 [Service]
 Type=oneshot
+EnvironmentFile=-/etc/sysconfig/nostalgia-firstboot
 ExecStart=/usr/lib/nostalgia/10-nostalgia-setup.sh
-RemainAfterExit=no
 
 [Install]
 WantedBy=graphical.target
