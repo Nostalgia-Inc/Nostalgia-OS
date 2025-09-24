@@ -87,6 +87,17 @@ seed_steam_movies_for_user(){
   fi
 }
 
+set_hostname() {
+  # Pick your naming rule. Example: append _CRT once.
+  local cur; cur="$(hostname)"
+  local want="${cur%_CRT}_CRT"       # ensures we don’t double-append
+  if [[ "$cur" != "$want" ]]; then
+    echo "$want" | tee /etc/hostname >/dev/null
+    hostnamectl set-hostname --static "$want" || true
+    hostnamectl set-hostname --transient "$want" || true
+  fi
+}
+
 # ===================== verification =====================
 verify(){
   local ok=1
@@ -118,6 +129,7 @@ verify(){
 
 # ===================== run once (+ retry) =====================
 run_all(){
+  set_hostname
   ensure_flathub_and_arduino
   apply_wallpaper_for_user "$TARGET_USER"
   seed_steam_movies_for_user "$TARGET_USER"
