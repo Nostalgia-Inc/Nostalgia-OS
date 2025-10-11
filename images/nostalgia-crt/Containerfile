@@ -12,8 +12,16 @@ COPY common/ /usr/share/nostalgia/
 # ── Plymouth theme (build-time) ───────────────────────────────────────────────
 # path exists in repo: images/nostalgia-crt/plymouth/nostalgia/*
 COPY images/nostalgia-crt/plymouth/nostalgia /usr/share/plymouth/themes/nostalgia
-RUN install -d /etc/plymouth && \
-    printf '%s\n[Daemon]\nTheme=nostalgia\nShowDelay=0\n' > /etc/plymouth/plymouthd.conf
+RUN set -eux; \
+    install -d /etc/plymouth; \
+    if ! plymouth-set-default-theme -R nostalgia; then \
+      echo "plymouth-set-default-theme -R failed, retrying without regeneration"; \
+      plymouth-set-default-theme nostalgia || { \
+        printf '%s\n[Daemon]\nTheme=nostalgia\nShowDelay=0\n' > /etc/plymouth/plymouthd.conf; \
+      }; \
+      dracut -f || echo "dracut failed; initramfs regeneration will be attempted on first boot"; \
+    fi; \
+    ostree container commit
 
 # ── KDE default wallpaper for new users via /etc/skel ─────────────────────────
 # if you ship: common/branding/wallpaper.png

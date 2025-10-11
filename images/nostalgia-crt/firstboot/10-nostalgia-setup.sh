@@ -69,6 +69,27 @@ apply_wallpaper_for_user(){
   fi
 }
 
+ensure_plymouth_theme(){
+  if ! command -v plymouth-set-default-theme >/dev/null 2>&1; then
+    warn "plymouth-set-default-theme not found; skipping Plymouth configuration"
+    return
+  fi
+
+  if ! plymouth-set-default-theme -R nostalgia >/dev/null 2>&1; then
+    warn "plymouth-set-default-theme -R nostalgia failed; attempting without regeneration"
+    if ! plymouth-set-default-theme nostalgia >/dev/null 2>&1; then
+      warn "Unable to set Plymouth theme to nostalgia"
+    fi
+    if command -v dracut >/dev/null 2>&1; then
+      if ! dracut -f >/dev/null 2>&1; then
+        warn "dracut failed to rebuild initramfs for Plymouth theme"
+      fi
+    else
+      warn "dracut not available; initramfs regeneration skipped"
+    fi
+  fi
+}
+
 seed_steam_movies_for_user(){
   local user="$1"
   if id "$user" >/dev/null 2>&1; then
@@ -130,6 +151,7 @@ verify(){
 # ===================== run once (+ retry) =====================
 run_all(){
   set_hostname
+  ensure_plymouth_theme
   ensure_flathub_and_arduino
   apply_wallpaper_for_user "$TARGET_USER"
   seed_steam_movies_for_user "$TARGET_USER"

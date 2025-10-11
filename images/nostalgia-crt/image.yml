@@ -8,8 +8,8 @@ rpm-ostree:
     - arduino
 
 default-user:
-  name: crt
-  description: "Nostalgia CRT User"
+  name: nostalgia
+  description: "Nostalgia User"
   password: "nostalgia"
   groups:
     - wheel
