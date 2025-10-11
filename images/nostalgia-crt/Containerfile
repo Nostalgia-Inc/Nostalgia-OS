@@ -14,13 +14,7 @@ COPY common/ /usr/share/nostalgia/
 COPY images/nostalgia-crt/plymouth/nostalgia /usr/share/plymouth/themes/nostalgia
 RUN set -eux; \
     install -d /etc/plymouth; \
-    if ! plymouth-set-default-theme -R nostalgia; then \
-      echo "plymouth-set-default-theme -R failed, retrying without regeneration"; \
-      plymouth-set-default-theme nostalgia || { \
-        printf '%s\n[Daemon]\nTheme=nostalgia\nShowDelay=0\n' > /etc/plymouth/plymouthd.conf; \
-      }; \
-      dracut -f || echo "dracut failed; initramfs regeneration will be attempted on first boot"; \
-    fi; \
+    printf '%s\n[Daemon]\nTheme=nostalgia\nShowDelay=0\n' > /etc/plymouth/plymouthd.conf; \
     ostree container commit
 
 # ── KDE default wallpaper for new users via /etc/skel ─────────────────────────
@@ -48,17 +42,5 @@ RUN install -d /etc/skel/.steam/root/config/uioverrides/movies && \
              /etc/skel/.steam/root/config/uioverrides/movies/deck_shutdown.webm ; \
     fi
 
-# ── First-boot bits (runtime-only work like Flatpaks, per-user tweaks) ────────
-COPY images/nostalgia-crt/firstboot/10-nostalgia-setup.sh \
-     /usr/lib/nostalgia/10-nostalgia-setup.sh
-COPY images/nostalgia-crt/firstboot/nostalgia-firstboot.service \
-     /usr/lib/systemd/system/nostalgia-firstboot.service
-
-# first-boot enable (static symlink so it survives ostree)
-RUN chmod +x /usr/lib/nostalgia/10-nostalgia-setup.sh && \
-    install -d /etc/systemd/system/graphical.target.wants && \
-    ln -sf /usr/lib/systemd/system/nostalgia-firstboot.service \
-           /etc/systemd/system/graphical.target.wants/nostalgia-firstboot.service
-
-# helper tools used by our first-boot script
+# helper tools for runtime media playback
 RUN rpm-ostree install mpv && ostree container commit

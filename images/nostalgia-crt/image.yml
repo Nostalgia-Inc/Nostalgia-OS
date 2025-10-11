@@ -19,4 +19,4 @@ default-user:
 system:
   hostname: NostalgiaSYS_CRT
 
-firstboot: true
+firstboot: false

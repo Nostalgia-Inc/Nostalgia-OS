@@ -2,6 +2,51 @@
 contents = """
 user --name=nostalgia --groups=wheel --password=nostalgia
 rootpw --lock
+
+%post
+set -u
+
+PLY_THEME=nostalgia
+
+if command -v plymouth-set-default-theme >/dev/null 2>&1; then
+  if ! plymouth-set-default-theme -R "${PLY_THEME}"; then
+    plymouth-set-default-theme "${PLY_THEME}" || true
+    if command -v dracut >/dev/null 2>&1; then
+      dracut -f || true
+    fi
+  fi
+fi
+
+if command -v flatpak >/dev/null 2>&1; then
+  flatpak remote-add --system --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo || true
+  flatpak install --system -y --noninteractive flathub cc.arduino.arduinoide || true
+fi
+
+if id nostalgia >/dev/null 2>&1; then
+  HOME_DIR="$(getent passwd nostalgia | cut -d: -f6)"
+  if [ -n "${HOME_DIR}" ] && [ -d "${HOME_DIR}" ]; then
+    cp -an /etc/skel/. "${HOME_DIR}/" 2>/dev/null || true
+    install -d "${HOME_DIR}/.config"
+    if [ -f /usr/share/nostalgia/Nostalgia.png ]; then
+      if ! grep -q 'Image=file:///usr/share/nostalgia/Nostalgia.png' "${HOME_DIR}/.config/plasma-org.kde.plasma.desktop-appletsrc" 2>/dev/null; then
+        cat <<'EOF' >> "${HOME_DIR}/.config/plasma-org.kde.plasma.desktop-appletsrc"
+[Containments][1][Wallpaper][org.kde.image][General]
+Image=file:///usr/share/nostalgia/Nostalgia.png
+EOF
+      fi
+    fi
+    install -d "${HOME_DIR}/.steam/root/config/uioverrides/movies"
+    if [ -f /usr/share/nostalgia/media/boot-intro.webm ]; then
+      ln -sf /usr/share/nostalgia/media/boot-intro.webm "${HOME_DIR}/.steam/root/config/uioverrides/movies/deck_startup.webm"
+    fi
+    if [ -f /usr/share/nostalgia/media/boot-outro.webm ]; then
+      ln -sf /usr/share/nostalgia/media/boot-outro.webm "${HOME_DIR}/.steam/root/config/uioverrides/movies/deck_shutdown.webm"
+    fi
+    chown -R nostalgia:nostalgia "${HOME_DIR}/.config" 2>/dev/null || true
+    chown -R nostalgia:nostalgia "${HOME_DIR}/.steam" 2>/dev/null || true
+  fi
+fi
+%end
 """
 
 [customizations.installer.modules]
