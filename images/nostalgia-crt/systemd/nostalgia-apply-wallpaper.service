@@ -1,0 +1,12 @@
+[Unit]
+Description=Apply Nostalgia wallpaper defaults
+After=bazzite-user-setup.service
+ConditionUser=!@system
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/nostalgia-apply-wallpaper
+RemainAfterExit=yes
+
+[Install]
+WantedBy=default.target

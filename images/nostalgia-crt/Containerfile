@@ -26,6 +26,59 @@ RUN if [ -f /usr/share/nostalgia/branding/wallpaper.png ]; then \
         > /etc/skel/.config/plasma-org.kde.plasma.desktop-appletsrc ; \
     fi
 
+# ── Anaconda installer styling overrides ───────────────────────────────────────
+RUN if [ -f /usr/share/nostalgia/branding/installer/fedora.css ]; then \
+      install -d /usr/share/anaconda/pixmaps && \
+      install -m 0644 /usr/share/nostalgia/branding/installer/fedora.css /usr/share/anaconda/pixmaps/fedora.css ; \
+    fi
+
+# ── Ensure wallpaper is applied on first login ────────────────────────────────
+COPY images/nostalgia-crt/scripts/nostalgia-apply-wallpaper.sh /usr/libexec/nostalgia-apply-wallpaper
+COPY images/nostalgia-crt/systemd/nostalgia-apply-wallpaper.service /usr/lib/systemd/user/nostalgia-apply-wallpaper.service
+RUN set -eux; \
+    chmod 0755 /usr/libexec/nostalgia-apply-wallpaper; \
+    systemctl --global enable nostalgia-apply-wallpaper.service; \
+    ostree container commit
+
+# ── Update OS release metadata to Nostalgia branding ──────────────────────────
+RUN set -eux; \
+    python3 - <<'PY'
+import os
+import pathlib
+
+release_path = pathlib.Path("/usr/lib/os-release")
+if release_path.exists():
+    replacements = {
+        "NAME": "Nostalgia OS",
+        "PRETTY_NAME": "Nostalgia OS 42",
+        "ID": "nostalgia",
+        "ID_LIKE": "bazzite fedora",
+        "VARIANT": "Nostalgia CRT (KDE)",
+        "VARIANT_ID": "nostalgia-crt",
+    }
+
+    lines = release_path.read_text().splitlines()
+    updated = []
+    for line in lines:
+        if "=" not in line or line.startswith("#"):
+            updated.append(line)
+            continue
+        key, value = line.split("=", 1)
+        if key in replacements:
+            updated.append(f'{key}="{replacements[key]}"')
+        else:
+            updated.append(line)
+
+    release_path.write_text("\n".join(updated) + "\n")
+
+link = pathlib.Path("/etc/os-release")
+if link.exists() or link.is_symlink():
+    link.unlink()
+link.symlink_to("../usr/lib/os-release")
+PY
+    ; \
+    ostree container commit
+
 # ── Ship Game Mode intro/outro videos (Steam Deck style overrides) ────────────
 # put .webm files here in the repo: images/nostalgia-crt/gamescope/media/
 RUN install -d /usr/share/nostalgia/media

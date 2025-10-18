@@ -1,0 +1,38 @@
+/* Nostalgia OS Anaconda styling overrides */
+
+@define-color nostalgiaPrimary #002ac2;
+@define-color nostalgiaAccent #0d1b2a;
+
+.logo-sidebar {
+    background-color: @nostalgiaPrimary;
+    background-image: none;
+}
+
+.logo {
+    background-image: none;
+    background-color: transparent;
+    position: relative;
+}
+
+.logo::after {
+    content: "Nostalgia OS";
+    display: block;
+    margin-top: 32px;
+    text-align: center;
+    font-size: 32px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    color: white;
+    text-transform: uppercase;
+}
+
+.product-logo {
+    background-image: none;
+    background-color: transparent;
+}
+
+AnacondaSpokeWindow #nav-box {
+    background-color: shade(@nostalgiaPrimary, 1.15);
+    background-image: none;
+    color: white;
+}
