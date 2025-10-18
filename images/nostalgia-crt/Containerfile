@@ -76,7 +76,7 @@ if link.exists() or link.is_symlink():
     link.unlink()
 link.symlink_to("../usr/lib/os-release")
 PY
-    ; \
+
     ostree container commit
 
 # ── Ship Game Mode intro/outro videos (Steam Deck style overrides) ────────────
