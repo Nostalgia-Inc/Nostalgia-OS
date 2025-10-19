@@ -26,12 +26,6 @@ RUN if [ -f /usr/share/nostalgia/branding/wallpaper.png ]; then \
         > /etc/skel/.config/plasma-org.kde.plasma.desktop-appletsrc ; \
     fi
 
-# ── Anaconda installer styling overrides ───────────────────────────────────────
-RUN if [ -f /usr/share/nostalgia/branding/installer/fedora.css ]; then \
-      install -d /usr/share/anaconda/pixmaps && \
-      install -m 0644 /usr/share/nostalgia/branding/installer/fedora.css /usr/share/anaconda/pixmaps/fedora.css ; \
-    fi
-
 # ── Ensure wallpaper is applied on first login ────────────────────────────────
 COPY images/nostalgia-crt/scripts/nostalgia-apply-wallpaper.sh /usr/libexec/nostalgia-apply-wallpaper
 COPY images/nostalgia-crt/systemd/nostalgia-apply-wallpaper.service /usr/lib/systemd/user/nostalgia-apply-wallpaper.service
@@ -39,11 +33,6 @@ RUN set -eux; \
     chmod 0755 /usr/libexec/nostalgia-apply-wallpaper; \
     systemctl --global enable nostalgia-apply-wallpaper.service; \
     ostree container commit
-
-# ── Update OS release metadata to Nostalgia branding ──────────────────────────
-COPY images/nostalgia-crt/scripts/update-os-release.py /tmp/update-os-release.py
-RUN python3 /tmp/update-os-release.py && rm /tmp/update-os-release.py
-RUN ostree container commit
 
 # ── Ship Game Mode intro/outro videos (Steam Deck style overrides) ────────────
 # put .webm files here in the repo: images/nostalgia-crt/gamescope/media/
