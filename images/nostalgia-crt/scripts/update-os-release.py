@@ -6,8 +6,6 @@ if release_path.exists():
     replacements = {
         "NAME": "Nostalgia OS",
         "PRETTY_NAME": "Nostalgia OS 42",
-        "ID": "nostalgia",
-        "ID_LIKE": "bazzite fedora",
         "VARIANT": "Nostalgia CRT (KDE)",
         "VARIANT_ID": "nostalgia-crt",
     }
