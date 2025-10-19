@@ -41,8 +41,7 @@ RUN set -eux; \
     ostree container commit
 
 # ── Update OS release metadata to Nostalgia branding ──────────────────────────
-RUN set -eux; \
-    python3 - <<'PY'
+RUN python3 - <<'PY'
 import os
 import pathlib
 
@@ -77,7 +76,7 @@ if link.exists() or link.is_symlink():
 link.symlink_to("../usr/lib/os-release")
 PY
 
-    ostree container commit
+RUN ostree container commit
 
 # ── Ship Game Mode intro/outro videos (Steam Deck style overrides) ────────────
 # put .webm files here in the repo: images/nostalgia-crt/gamescope/media/
