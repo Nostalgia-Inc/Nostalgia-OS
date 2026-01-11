@@ -16,11 +16,11 @@ echo "📦 Installing core packages..."
 
 # Install tmux - terminal multiplexer
 echo "  Installing: tmux"
-dnf install -y --skip-unavailable tmux || echo "⚠️  tmux installation skipped (unavailable)"
+rpm-ostree install tmux || echo "⚠️  tmux installation skipped (unavailable)"
 
 # Install arduino - electronics development platform
 echo "  Installing: arduino"
-dnf install -y --skip-unavailable arduino || echo "⚠️  arduino installation skipped (unavailable)"
+rpm-ostree install arduino || echo "⚠️  arduino installation skipped (unavailable)"
 
 echo "✅ Package installation complete"
 
