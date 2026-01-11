@@ -1,0 +1,36 @@
+# Nostalgia OS GRUB Theme
+# A retro-styled boot menu theme
+
+# Terminal colors
+terminal-border: "#1a1a1a"
+terminal-box: "#2d2d2d"
+
+# Message styling
+message-bg-color: "#000000"
+message-fg-color: "#00ff00"
+message-color: "#00ff00"
+
+# Title/heading styling  
+title-text: "Nostalgia OS"
+title-color: "#00ff00"
+title-font: "Courier 16"
+
+# Menu styling
+menu-box-border-color: "#00ff00"
+menu-box-bg-color: "#000000"
+
+# Selected item styling
+highlight-bg-color: "#00ff00"
+highlight-fg-color: "#000000"
+highlight-color: "#000000"
+
+# Unselected item styling
+normal-color: "#00ff00"
+
+# Timeout styling
+timeout-style: menu
+timeout-color: "#00ff00"
+
+# Boot splash (if background image exists)
+# desktop-image: "nostalgia-splash.png"
+# desktop-color: "#000000"

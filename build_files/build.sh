@@ -1,25 +1,33 @@
 #!/bin/bash
 
-set -ouex pipefail
+set -euo pipefail
 
-### Install packages
+# Nostalgia OS: Package installation and system setup
+# Runs during container image build
+# Purpose: Install required packages and enable system services
 
-# Packages can be installed from any enabled yum repo on the image.
-# RPMfusion repos are available by default in ublue main images
-# List of rpmfusion packages can be found here:
-# https://mirrors.rpmfusion.org/mirrorlist?path=free/fedora/updates/39/x86_64/repoview/index.html&protocol=https&redirect=1
+echo "🔧 Nostalgia OS: Starting package installation..."
 
-# this installs a package from fedora repos
-dnf5 install -y tmux 
+# Error handling
+trap 'echo "❌ Error in build.sh at line $LINENO"; exit 1' ERR
+set -E
+
+echo "📦 Installing core packages..."
+
+# Install tmux - terminal multiplexer
+echo "  Installing: tmux"
+dnf install -y tmux
+
+# Install arduino - electronics development platform
+echo "  Installing: arduino"
 dnf install -y arduino
 
-# Use a COPR Example:
-#
-# dnf5 -y copr enable ublue-os/staging
-# dnf5 -y install package
-# Disable COPRs so they don't end up enabled on the final image:
-# dnf5 -y copr disable ublue-os/staging
+echo "✅ Package installation complete"
 
-#### Example for enabling a System Unit File
-
+# Enable system services
+echo "⚙️  Enabling system services..."
+echo "  Enabling: podman.socket"
 systemctl enable podman.socket
+
+echo "✅ System configuration complete"
+echo "🎉 Build script finished successfully!"

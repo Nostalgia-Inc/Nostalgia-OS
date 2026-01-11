@@ -1,7 +1,7 @@
 FROM ghcr.io/ublue-os/bazzite-kinoite:latest
 
-LABEL org.opencontainers.image.title="Nostalgia OS"
-LABEL org.opencontainers.image.description="Bazzite Kinoite base, Nostalgia branding, KDE defaults, and first-boot extras"
+LABEL org.opencontainers.image.title="Nostalgia Arcade"
+LABEL org.opencontainers.image.description="Bazzite Kinoite base, Nostalgia branding, KDE defaults, arcade-themed customizations"
 LABEL org.opencontainers.image.authors="Nostalgia Inc."
 LABEL org.opencontainers.image.source="https://github.com/Nostalgia-Inc/Nostalgia-OS"
 
@@ -10,15 +10,14 @@ COPY build_files/build.sh /tmp/build.sh
 RUN chmod +x /tmp/build.sh && /tmp/build.sh && rm /tmp/build.sh && ostree container commit
 
 # ── Copy shared branding (wallpapers, logos, etc.) ────────────────────────────
-# path exists in repo: common/...
-COPY common/ /usr/share/nostalgia/
+# path exists in repo: common/...\nCOPY common/ /usr/share/nostalgia/
 
 # ── Plymouth theme (build-time) ───────────────────────────────────────────────
-# path exists in repo: images/nostalgia-crt/plymouth/nostalgia/*
-COPY images/nostalgia-crt/plymouth/nostalgia /usr/share/plymouth/themes/nostalgia
+# path exists in repo: images/nostalgia-arcade/plymouth/nostalgia-arcade/*
+COPY images/nostalgia-arcade/plymouth/nostalgia-arcade /usr/share/plymouth/themes/nostalgia-arcade
 RUN set -eux; \
     install -d /etc/plymouth; \
-    printf '%s\n[Daemon]\nTheme=nostalgia\nShowDelay=0\n' > /etc/plymouth/plymouthd.conf; \
+    printf '%s\n[Daemon]\nTheme=nostalgia-arcade\nShowDelay=0\n' > /etc/plymouth/plymouthd.conf; \
     ostree container commit
 
 # ── KDE default wallpaper for new users via /etc/skel ─────────────────────────
@@ -39,43 +38,27 @@ RUN set -eux; \
     ostree container commit
 
 # ── First boot setup script and service ────────────────────────────────────────
-COPY images/nostalgia-crt/scripts/10-nostalgia-setup.sh /usr/libexec/nostalgia-setup
-COPY images/nostalgia-crt/systemd/nostalgia-setup.service /usr/lib/systemd/user/nostalgia-setup.service
+COPY images/nostalgia-arcade/scripts/10-nostalgia-arcade-setup.sh /usr/libexec/nostalgia-setup
+COPY images/nostalgia-arcade/systemd/nostalgia-setup.service /usr/lib/systemd/user/nostalgia-setup.service
 RUN set -eux; \
     chmod 0755 /usr/libexec/nostalgia-setup; \
     systemctl --global enable nostalgia-setup.service; \
     ostree container commit
 
 # ── Power and performance tuning script and service ────────────────────────────
-COPY images/nostalgia-crt/scripts/nostalgia-power-tuning.sh /usr/libexec/nostalgia-power-tuning
-COPY images/nostalgia-crt/systemd/nostalgia-power-tuning.service /usr/lib/systemd/system/nostalgia-power-tuning.service
+COPY images/nostalgia-arcade/scripts/nostalgia-arcade-tuning.sh /usr/libexec/nostalgia-power-tuning
+COPY images/nostalgia-arcade/systemd/nostalgia-power-tuning.service /usr/lib/systemd/system/nostalgia-power-tuning.service
 RUN set -eux; \
     chmod 0755 /usr/libexec/nostalgia-power-tuning; \
     systemctl enable nostalgia-power-tuning.service; \
     ostree container commit
 
 # ── GRUB theme configuration ───────────────────────────────────────────────────
-COPY images/nostalgia-crt/grub/theme.txt /usr/share/grub/themes/nostalgia-grub/theme.txt
+COPY images/nostalgia-arcade/grub/theme.txt /usr/share/grub/themes/nostalgia-arcade/theme.txt
 RUN set -eux; \
-    mkdir -p /usr/share/grub/themes/nostalgia-grub; \
-    install -D /usr/share/grub/themes/nostalgia-grub/theme.txt /boot/grub2/themes/nostalgia/theme.txt; \
+    mkdir -p /usr/share/grub/themes/nostalgia-arcade; \
+    install -D /usr/share/grub/themes/nostalgia-arcade/theme.txt /boot/grub2/themes/nostalgia-arcade/theme.txt; \
     ostree container commit
 
-# ── Ship Game Mode intro/outro videos (Steam Deck style overrides) ────────────
-# put .webm files here in the repo: images/nostalgia-crt/gamescope/media/
-RUN install -d /usr/share/nostalgia/media
-COPY images/nostalgia-crt/gamescope/media/ /usr/share/nostalgia/media/
-
-# seed new users with steam “ui override” videos
-RUN install -d /etc/skel/.steam/root/config/uioverrides/movies && \
-    if [ -f /usr/share/nostalgia/media/boot-intro.webm ]; then \
-      ln -sf /usr/share/nostalgia/media/boot-intro.webm \
-             /etc/skel/.steam/root/config/uioverrides/movies/deck_startup.webm ; \
-    fi && \
-    if [ -f /usr/share/nostalgia/media/boot-outro.webm ]; then \
-      ln -sf /usr/share/nostalgia/media/boot-outro.webm \
-             /etc/skel/.steam/root/config/uioverrides/movies/deck_shutdown.webm ; \
-    fi
-
-# helper tools for runtime media playback
+# ── Additional tools for arcade experience ─────────────────────────────────────
 RUN rpm-ostree install mpv && ostree container commit

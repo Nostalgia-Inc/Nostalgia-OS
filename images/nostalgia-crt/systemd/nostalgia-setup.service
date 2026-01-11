@@ -1,0 +1,12 @@
+[Unit]
+Description=Nostalgia OS First Boot Setup
+After=default.target
+ConditionUser=!@system
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/nostalgia-setup
+RemainAfterExit=yes
+
+[Install]
+WantedBy=default.target

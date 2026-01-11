@@ -1,0 +1,23 @@
+name: nostalgia-arcade
+description: "Nostalgia Arcade - Generic x86-64 retro-themed desktop"
+base-image: ghcr.io/ublue-os/bazzite-kinoite:latest
+iso-name: nostalgia-arcade.iso
+
+rpm-ostree:
+  install:
+    - arduino
+    - mpv
+
+default-user:
+  name: nostalgia
+  description: "Nostalgia User"
+  password: "nostalgia"
+  groups:
+    - wheel
+    - audio
+    - video
+
+system:
+  hostname: Nostalgia_Arcade
+
+firstboot: true

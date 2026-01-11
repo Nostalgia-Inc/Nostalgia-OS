@@ -1,0 +1,12 @@
+[Unit]
+Description=Nostalgia Arcade Hardware Tuning
+After=multi-user.target
+Before=getty@tty1.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/nostalgia-power-tuning
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

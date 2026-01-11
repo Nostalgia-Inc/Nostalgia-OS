@@ -1,0 +1,36 @@
+# Nostalgia Arcade GRUB Theme
+# A retro arcade-styled boot menu theme
+
+# Terminal colors - Classic arcade cabinet style
+terminal-border: "#000000"
+terminal-box: "#1a1a1a"
+
+# Message styling - Bright yellow on black for visibility
+message-bg-color: "#000000"
+message-fg-color: "#ffff00"
+message-color: "#ffff00"
+
+# Title/heading styling  
+title-text: "Nostalgia Arcade"
+title-color: "#ffff00"
+title-font: "Courier 16"
+
+# Menu styling - Arcade cabinet feel
+menu-box-border-color: "#ffff00"
+menu-box-bg-color: "#000000"
+
+# Selected item styling
+highlight-bg-color: "#ffff00"
+highlight-fg-color: "#000000"
+highlight-color: "#000000"
+
+# Unselected item styling
+normal-color: "#ffff00"
+
+# Timeout styling
+timeout-style: menu
+timeout-color: "#ffff00"
+
+# Boot splash (if background image exists)
+# desktop-image: "arcade-splash.png"
+# desktop-color: "#000000"

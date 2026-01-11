@@ -1,8 +1,15 @@
 # ***Nostalgia OS***
 
-# Purpose
+## Quick Links
+- 📖 [Getting Started Guide](GETTING_STARTED.md) - New users start here
+- 🏗️ [Build Instructions](BUILD_INSTRUCTIONS.md) - How to build and test
+- 📚 [Implementation Summary](IMPLEMENTATION_SUMMARY.md) - What was built
+- 🛣️ [Roadmap](ROADMAP.md) - Future plans
+- 🤝 [Contributing](CONTRIBUTING.md) - How to contribute
 
-This Operating System is build for custom built ISO configurations of the various Nostalgia Systems hardware creations. 
+## Purpose
+
+This Operating System is built for custom ISO configurations of Nostalgia Systems hardware creations.
 
 
 This OS will have multiple sub systems to install and boot from depending on the requirements and specifacations of the hardware installed on. 
@@ -25,27 +32,28 @@ This image is built purposely built for the Lattepanda Delta 3 Single Board Comp
 - [Main][(https://github.com/ublue-os/main/)]
 - [Bazzite][(https://bazzite.gg/)]
 
-## **Current Modifacations**
+## **Current Modifications**
 
-### **10-nostalgia-setup.sh**
+### **Nostalgia CRT** ✅ COMPLETE
   - Custom Default User - [Successful]
-  - Custom Default Wallpaper - [Loading...]
-  - Download and Install Arduino IDE - [Loading...]
-  - Configure Custom Nostalgia CRT Plymouth Theme - [Loading...]
-  - Configure Custom GRUB Theme - [Loading...]
-  - Power and Performance Tweaks - [Loading...]
+  - Custom Default Wallpaper - [Successful]
+  - Download and Install Arduino IDE - [Successful]
+  - Configure Custom Nostalgia CRT Plymouth Theme - [Successful]
+  - Configure Custom GRUB Theme - [Successful]
+  - Power and Performance Tweaks - [Successful]
 
-****
+---
 
-# **Nostalgia Arcade - Loading In Progress...**
+# **Nostalgia Arcade - In Development**
 
-This image is meant for more of a standard system install on non specific hardware. 
+This image is meant for a standard system install on non-specific hardware.
 
-## **Current Modifacations**
+## **Current Modifications**
 
-### **10-nostalgia-setup.sh**
-  - Custom Default User - [Successful]
-  - Custom Default Wallpaper - [Loading...]
-  - Configure Custom Nostalgia ARCADE Plymouth Theme - [Loading...]
-  - Configure Custom GRUB Theme - [Loading...]
+### **Nostalgia Arcade** 🚧 IN PROGRESS
+  - Custom Default User - [Planned]
+  - Custom Default Wallpaper - [Planned]
+  - Configure Custom Nostalgia ARCADE Plymouth Theme - [Planned]
+  - Configure Custom GRUB Theme - [Planned]
+  - Generic Hardware Support - [Planned]
 
