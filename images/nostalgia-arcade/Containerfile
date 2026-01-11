@@ -61,4 +61,4 @@ RUN set -eux; \
     ostree container commit
 
 # ── Additional tools for arcade experience ─────────────────────────────────────
-RUN rpm-ostree install mpv && ostree container commit
+RUN rpm-ostree install --skip-unavailable mpv && ostree container commit

@@ -78,4 +78,4 @@ RUN install -d /etc/skel/.steam/root/config/uioverrides/movies && \
     fi
 
 # helper tools for runtime media playback
-RUN rpm-ostree install mpv && ostree container commit
+RUN rpm-ostree install --skip-unavailable mpv && ostree container commit
