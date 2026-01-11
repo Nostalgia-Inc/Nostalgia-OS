@@ -1,4 +1,4 @@
-FROM ghcr.io/ublue-os/bazzite-kinoite:latest
+FROM ghcr.io/ublue-os/bazzite-deck@sha256:98a0c1fbd89c150ed6ba9d356b3a3ddc11361c4d3a26c8fd17321b9c762d1081
 
 LABEL org.opencontainers.image.title="Nostalgia Arcade"
 LABEL org.opencontainers.image.description="Bazzite Kinoite base, Nostalgia branding, KDE defaults, arcade-themed customizations"

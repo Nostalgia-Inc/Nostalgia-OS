@@ -1,6 +1,6 @@
 name: nostalgia-crt
-description: "Nostalgia CRT - KDE-based Bazzite variant"
-base-image: ghcr.io/ublue-os/bazzite-kinoite:latest
+description: "Nostalgia CRT - KDE-based Bazzite variant (bazzite-deck)"
+base-image: ghcr.io/ublue-os/bazzite-deck@sha256:98a0c1fbd89c150ed6ba9d356b3a3ddc11361c4d3a26c8fd17321b9c762d1081
 iso-name: nostalgia-crt.iso
 
 rpm-ostree:
