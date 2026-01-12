@@ -1,14 +1,14 @@
 [[customizations.repositories]]
 id = "terra-mesa"
-gpgcheck = false
+enabled = false
 
 [[customizations.repositories]]
 id = "terra-extras"
-gpgcheck = false
+enabled = false
 
 [[customizations.repositories]]
 id = "terra"
-gpgcheck = false
+enabled = false
 
 [customizations.installer.kickstart]
 contents = """
