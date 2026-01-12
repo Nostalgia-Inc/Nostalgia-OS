@@ -1,3 +1,15 @@
+[[customizations.repositories]]
+id = "terra-mesa"
+gpgcheck = false
+
+[[customizations.repositories]]
+id = "terra-extras"
+gpgcheck = false
+
+[[customizations.repositories]]
+id = "terra"
+gpgcheck = false
+
 [customizations.installer.kickstart]
 contents = """
 user --name=nostalgia --groups=wheel --password=nostalgia
