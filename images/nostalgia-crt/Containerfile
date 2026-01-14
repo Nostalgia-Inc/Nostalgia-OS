@@ -2,7 +2,14 @@ FROM ghcr.io/ublue-os/bazzite-deck@sha256:98a0c1fbd89c150ed6ba9d356b3a3ddc11361c
 
 # Fix terra repository GPG issues for bootc-image-builder
 RUN for repo in /etc/yum.repos.d/terra*.repo; do \
-      [ -f "$repo" ] && sed -i 's/^gpgcheck=1/gpgcheck=0/g' "$repo" || true; \
+      if [ -f "$repo" ]; then \
+        sed -i -e 's/^gpgcheck=1$/gpgcheck=0/' \
+               -e 's/^gpgcheck = 1$/gpgcheck=0/' \
+               -e 's/^repo_gpgcheck=1$/repo_gpgcheck=0/' \
+               -e 's/^repo_gpgcheck = 1$/repo_gpgcheck=0/' \
+               -e '/^gpgkey=/d' \
+               -e '/^gpgkey =/d' "$repo"; \
+      fi; \
     done
 
 LABEL org.opencontainers.image.title="Nostalgia OS"
