@@ -1,5 +1,10 @@
 FROM ghcr.io/ublue-os/bazzite-deck@sha256:98a0c1fbd89c150ed6ba9d356b3a3ddc11361c4d3a26c8fd17321b9c762d1081
 
+# Fix terra repository GPG issues for bootc-image-builder
+RUN for repo in /etc/yum.repos.d/terra*.repo; do \
+      [ -f "$repo" ] && sed -i 's/^gpgcheck=1/gpgcheck=0/g' "$repo" || true; \
+    done
+
 LABEL org.opencontainers.image.title="Nostalgia OS"
 LABEL org.opencontainers.image.description="Bazzite Kinoite base, Nostalgia branding, KDE defaults, and first-boot extras"
 LABEL org.opencontainers.image.authors="Nostalgia Inc."

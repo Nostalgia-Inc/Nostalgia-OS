@@ -1,15 +1,3 @@
-[[customizations.repositories]]
-id = "terra-mesa"
-enabled = false
-
-[[customizations.repositories]]
-id = "terra-extras"
-enabled = false
-
-[[customizations.repositories]]
-id = "terra"
-enabled = false
-
 [customizations.installer.kickstart]
 contents = """
 user --name=nostalgia --groups=wheel --password=nostalgia
