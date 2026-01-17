@@ -4,7 +4,9 @@ user --name=nostalgia --groups=wheel --password=nostalgia
 rootpw --lock
 
 %post
-set -u
+# Log all output for debugging
+exec > >(tee -a /root/post-install.log) 2>&1
+echo "Starting post-install script at $(date)"
 
 PLY_THEME=nostalgia
 
