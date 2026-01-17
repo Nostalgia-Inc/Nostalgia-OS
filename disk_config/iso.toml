@@ -1,3 +1,10 @@
+# ISO Installation Configuration for Nostalgia OS
+# 
+# NOTE: The Runtime module is disabled to prevent "System not booted via bootc" errors.
+# This is because bootc-image-builder creates container-based images, but ISO installation
+# runs in a traditional environment. Disabling Runtime prevents bootc-specific operations
+# during installation while still allowing proper ostree-based deployment.
+
 [customizations.installer.kickstart]
 contents = """
 user --name=nostalgia --groups=wheel --password=nostalgia
@@ -62,4 +69,5 @@ disable = [
   "org.fedoraproject.Anaconda.Modules.Network",
   "org.fedoraproject.Anaconda.Modules.Security",
   "org.fedoraproject.Anaconda.Modules.Subscription",
+  "org.fedoraproject.Anaconda.Modules.Runtime"
 ]
