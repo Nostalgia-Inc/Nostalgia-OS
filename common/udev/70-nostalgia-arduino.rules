@@ -1,0 +1,12 @@
+# LattePanda 3 Delta vendor IDs: normal sketch and bootloader modes.
+# Source: LattePanda's Leonardo configuration bundle (avr-0.0.3/boards.txt).
+# Group access also supports SSH users in dialout; uaccess supports active seats.
+SUBSYSTEM=="tty", ATTRS{idVendor}=="3343", ATTRS{idProduct}=="803a", GROUP="dialout", MODE="0660", TAG+="uaccess"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="3343", ATTRS{idProduct}=="003a", GROUP="dialout", MODE="0660", TAG+="uaccess"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="2a03", ATTRS{idProduct}=="803a", GROUP="dialout", MODE="0660", TAG+="uaccess"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="2a03", ATTRS{idProduct}=="003a", GROUP="dialout", MODE="0660", TAG+="uaccess"
+# Standard Leonardo devices remain supported as well.
+SUBSYSTEM=="tty", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="8036", GROUP="dialout", MODE="0660", TAG+="uaccess"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="0036", GROUP="dialout", MODE="0660", TAG+="uaccess"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="2a03", ATTRS{idProduct}=="8036", GROUP="dialout", MODE="0660", TAG+="uaccess"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="2a03", ATTRS{idProduct}=="0036", GROUP="dialout", MODE="0660", TAG+="uaccess"

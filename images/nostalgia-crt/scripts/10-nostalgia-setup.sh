@@ -14,6 +14,12 @@ fi
 
 mkdir -p "${STATE_DIR}"
 
+# Missing KDE tools must not produce a false setup-complete marker.
+if ! command -v kwriteconfig6 >/dev/null 2>&1; then
+    echo "KDE setup requires kwriteconfig6; retrying next desktop login" >&2
+    exit 1
+fi
+
 echo "🎮 Nostalgia OS - First Boot Setup Starting..."
 
 # ── KDE Plasma Configuration ───────────────────────────────────────────────────
@@ -24,10 +30,12 @@ mkdir -p "${CONFIG_DIR}"
 
 # Enable animations and visual effects for nostalgia aesthetic
 if command -v kwriteconfig6 >/dev/null 2>&1; then
-    # KDE General settings
-    kwriteconfig6 --file "${CONFIG_DIR}/kdeglobals" \
-        --group General \
-        --key ColorScheme "Nostalgia"
+    # Only select the custom scheme when it is actually installed.
+    if [[ -f /usr/share/color-schemes/Nostalgia.colors ]]; then
+        kwriteconfig6 --file "${CONFIG_DIR}/kdeglobals" \
+            --group General \
+            --key ColorScheme "Nostalgia"
+    fi
 
     # Disable wallet prompts for better UX
     kwriteconfig6 --file "${CONFIG_DIR}/kwalletrc" \
@@ -49,7 +57,7 @@ APPS_DIR="${CONFIG_DIR}/xdg-desktop-portal"
 mkdir -p "${APPS_DIR}"
 
 # Ensure common applications are available
-COMMON_APPS=("firefox" "kwrite" "dolphin" "konsole" "arduino")
+COMMON_APPS=("firefox" "kwrite" "dolphin" "konsole")
 for app in "${COMMON_APPS[@]}"; do
     if command -v "${app}" >/dev/null 2>&1; then
         echo "✓ ${app} is available"
@@ -59,14 +67,24 @@ done
 # ── System preferences ─────────────────────────────────────────────────────────
 echo "🔧 Applying system preferences..."
 
-# Configure default terminals and text editors
-kwriteconfig6 --file "${CONFIG_DIR}/mimeapps.list" \
-    --group "Default Applications" \
-    --key "x-scheme-handler/http" "firefox.desktop"
+# Set a browser only when installed. Bazzite normally supplies Firefox as Flatpak.
+BROWSER_DESKTOP=""
+if [[ -f /usr/share/applications/firefox.desktop ]]; then
+    BROWSER_DESKTOP="firefox.desktop"
+elif command -v flatpak >/dev/null 2>&1 && flatpak info org.mozilla.firefox >/dev/null 2>&1; then
+    BROWSER_DESKTOP="org.mozilla.firefox.desktop"
+fi
+if [[ -n "${BROWSER_DESKTOP}" ]]; then
+    for scheme in http https; do
+        kwriteconfig6 --file "${CONFIG_DIR}/mimeapps.list" \
+            --group "Default Applications" \
+            --key "x-scheme-handler/${scheme}" "${BROWSER_DESKTOP};"
+    done
+fi
 
 kwriteconfig6 --file "${CONFIG_DIR}/mimeapps.list" \
     --group "Default Applications" \
-    --key "text/plain" "kwrite.desktop"
+    --key "text/plain" "org.kde.kwrite.desktop;"
 
 # ── Ensure wallpaper is set ────────────────────────────────────────────────────
 if [[ -f /usr/share/nostalgia/Nostalgia.png ]]; then
@@ -76,32 +94,13 @@ else
 fi
 
 # ── Validate Arduino IDE ───────────────────────────────────────────────────────
-if command -v arduino >/dev/null 2>&1; then
-    echo "✓ Arduino IDE installed and ready"
-    # Create Arduino directory in home
-    mkdir -p "${HOME}/.local/share/arduino"
+# Arduino's independent installer/shortcut services also handle existing users.
+if flatpak info --system cc.arduino.IDE2 >/dev/null 2>&1; then
+    echo "Arduino IDE 2 is installed"
 else
-    echo "⚠️  Arduino IDE not found - installation may have failed"
+    echo "Arduino IDE 2 download is pending; see nostalgia-arduino-install.service"
 fi
 
-# ── Create Desktop shortcuts ───────────────────────────────────────────────────
-DESKTOP_DIR="${XDG_DESKTOP_DIR:-$HOME/Desktop}"
-mkdir -p "${DESKTOP_DIR}"
-
-# Arduino IDE shortcut
-cat > "${DESKTOP_DIR}/Arduino.desktop" << 'EOF'
-[Desktop Entry]
-Type=Application
-Name=Arduino IDE
-Comment=Electronics development platform
-Exec=arduino
-Icon=arduino
-Categories=Development;Electronics;
-Terminal=false
-EOF
-chmod +x "${DESKTOP_DIR}/Arduino.desktop"
-
-# ── Log completion ─────────────────────────────────────────────────────────────
 echo "📝 Recording setup completion..."
 touch "${MARKER_FILE}"
 

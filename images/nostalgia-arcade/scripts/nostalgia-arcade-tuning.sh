@@ -86,8 +86,8 @@ sysctl -w vm.swappiness=10 2>/dev/null || true
 sysctl -w vm.vfs_cache_pressure=50 2>/dev/null || true
 
 # Enable transparent huge pages
-echo "1" > /sys/kernel/mm/transparent_hugepage/enabled 2>/dev/null || true
-echo "madvise" > /sys/kernel/mm/transparent_hugepage/shmem_enabled 2>/dev/null || true
+echo "madvise" > /sys/kernel/mm/transparent_hugepage/enabled 2>/dev/null || true
+echo "advise" > /sys/kernel/mm/transparent_hugepage/shmem_enabled 2>/dev/null || true
 
 echo "✓ Memory management optimized"
 

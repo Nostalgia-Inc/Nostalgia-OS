@@ -1,0 +1,14 @@
+[Unit]
+Description=Create the Arduino IDE 2 desktop shortcut
+After=bazzite-user-setup.service nostalgia-setup.service
+PartOf=graphical-session.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=exec
+ExecStart=/usr/libexec/nostalgia-arduino-shortcut
+Restart=on-failure
+RestartSec=60
+
+[Install]
+WantedBy=plasma-workspace.target

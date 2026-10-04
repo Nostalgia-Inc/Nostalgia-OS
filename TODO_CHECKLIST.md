@@ -1,5 +1,10 @@
 # Nostalgia OS: Todo Checklist
 
+> Feature audit, 4 October 2026: the historical completion boxes below are not
+> evidence of a validated release. The current [README feature table](README.md)
+> and [review notes](REVIEW_NOTES.md) record the verified results and remaining
+> Arduino, boot-branding, image-build, and LattePanda hardware checks.
+
 ## 🚨 CRITICAL (Must do ASAP)
 
 - [ ] **Update README.md** - Change "Loading..." to "Successful" for CRT features

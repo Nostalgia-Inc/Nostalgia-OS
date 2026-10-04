@@ -34,13 +34,21 @@ This image is built purposely built for the Lattepanda Delta 3 Single Board Comp
 
 ## **Current Modifications**
 
-### **Nostalgia CRT** ✅ COMPLETE
-  - Custom Default User - [Successful]
-  - Custom Default Wallpaper - [Successful]
-  - Download and Install Arduino IDE - [Successful]
-  - Configure Custom Nostalgia CRT Plymouth Theme - [Successful]
-  - Configure Custom GRUB Theme - [Successful]
-  - Power and Performance Tweaks - [Successful]
+### **Nostalgia CRT** — Feature validation in progress
+
+| Feature | Verified status |
+| --- | --- |
+| Custom default user | Configured in disk/ISO installer; a fresh installation must be tested. |
+| Custom wallpaper | Startup fix and isolated regression tests pass; a fresh graphical boot must be tested. |
+| Arduino IDE | Fresh build confirms `Packages not found: arduino`; installation and launcher need completion. |
+| Custom Plymouth theme | Assets exist; the script plugin is missing from the fresh image and animation/integration need completion. |
+| Custom GRUB theme | Theme file exists but is not activated; menu layout and boot integration need completion. |
+| LattePanda power tweaks | Tuning script exists; service ordering and supported governor selection corrected; hardware results must be measured. |
+
+The base is pinned to Bazzite Deck `44.20260929`; the CRT container builds successfully.
+See
+[feature completion proposal](FEATURE_COMPLETION_PLAN.md) and
+[review and validation notes](REVIEW_NOTES.md) before treating an image as release-ready.
 
 ---
 

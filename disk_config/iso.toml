@@ -7,7 +7,7 @@
 
 [customizations.installer.kickstart]
 contents = """
-user --name=nostalgia --groups=wheel --password=nostalgia
+user --name=nostalgia --groups=wheel,dialout --password=nostalgia
 rootpw --lock
 
 %post
@@ -15,35 +15,19 @@ rootpw --lock
 exec > >(tee -a /root/post-install.log) 2>&1
 echo "Starting post-install script at $(date)"
 
-PLY_THEME=nostalgia
-
-if command -v plymouth-set-default-theme >/dev/null 2>&1; then
-  if ! plymouth-set-default-theme -R "${PLY_THEME}"; then
-    plymouth-set-default-theme "${PLY_THEME}" || true
-    if command -v dracut >/dev/null 2>&1; then
-      dracut -f || true
-    fi
-  fi
+# The image already contains the selected Plymouth theme and rebuilt initramfs.
+# Seed GRUB before the installed system's first boot when the hook is available.
+if [ -x /usr/libexec/nostalgia-boot-branding ]; then
+  /usr/libexec/nostalgia-boot-branding || echo "GRUB branding deferred to the installed system service"
 fi
-
-if command -v flatpak >/dev/null 2>&1; then
-  flatpak remote-add --system --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo || true
-  flatpak install --system -y --noninteractive flathub cc.arduino.arduinoide || true
-fi
+# Arduino IDE 2 is installed by its background service after networking starts.
 
 if id nostalgia >/dev/null 2>&1; then
   HOME_DIR="$(getent passwd nostalgia | cut -d: -f6)"
   if [ -n "${HOME_DIR}" ] && [ -d "${HOME_DIR}" ]; then
     cp -an /etc/skel/. "${HOME_DIR}/" 2>/dev/null || true
     install -d "${HOME_DIR}/.config"
-    if [ -f /usr/share/nostalgia/Nostalgia.png ]; then
-      if ! grep -q 'Image=file:///usr/share/nostalgia/Nostalgia.png' "${HOME_DIR}/.config/plasma-org.kde.plasma.desktop-appletsrc" 2>/dev/null; then
-        cat <<'EOF' >> "${HOME_DIR}/.config/plasma-org.kde.plasma.desktop-appletsrc"
-[Containments][1][Wallpaper][org.kde.image][General]
-Image=file:///usr/share/nostalgia/Nostalgia.png
-EOF
-      fi
-    fi
+    # The wallpaper login service configures Plasma's actual desktop IDs.
     install -d "${HOME_DIR}/.steam/root/config/uioverrides/movies"
     if [ -f /usr/share/nostalgia/media/boot-intro.webm ]; then
       ln -sf /usr/share/nostalgia/media/boot-intro.webm "${HOME_DIR}/.steam/root/config/uioverrides/movies/deck_startup.webm"

@@ -1,85 +1,71 @@
 #!/usr/bin/bash
 set -euo pipefail
 
+# Apply the default once through the running Plasma session. Editing its config
+# on disk races with plasmashell, which owns and saves the desktop layout.
 TARGET_IMAGE="file:///usr/share/nostalgia/Nostalgia.png"
-CONFIG_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/plasma-org.kde.plasma.desktop-appletsrc"
 STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/nostalgia"
 MARKER_FILE="${STATE_DIR}/wallpaper-applied"
-WAIT_SECONDS=15
+WAIT_SECONDS=60
 
-# Exit early if the wallpaper asset is missing or we've already applied it.
-if [[ ! -f /usr/share/nostalgia/Nostalgia.png ]]; then
-  exit 0
-fi
-
+# Preserve wallpaper choices after a successful first-login setup.
 if [[ -f "${MARKER_FILE}" ]]; then
   exit 0
 fi
 
-mkdir -p "$(dirname "${MARKER_FILE}")"
+if [[ ! -r /usr/share/nostalgia/Nostalgia.png ]]; then
+  echo "Nostalgia wallpaper asset is missing or unreadable" >&2
+  exit 1
+fi
 
-# Give Plasma a moment on the first login to create its config skeleton.
-for _ in $(seq 1 "${WAIT_SECONDS}"); do
-  if [[ -f "${CONFIG_FILE}" ]]; then
+# Qt 6's D-Bus tool has different names/locations across distributions.
+QDBUS=""
+for candidate in qdbus6 qdbus-qt6 /usr/lib64/qt6/bin/qdbus /usr/lib/qt6/bin/qdbus qdbus; do
+  if command -v "${candidate}" >/dev/null 2>&1; then
+    QDBUS="${candidate}"
     break
+  fi
+done
+
+if [[ -z "${QDBUS}" ]] || ! command -v timeout >/dev/null 2>&1; then
+  echo "Nostalgia wallpaper requires qdbus (Qt 6) and timeout" >&2
+  exit 1
+fi
+
+SCRIPT="
+    var allDesktops = desktops();
+    if (allDesktops.length === 0) {
+      throw new Error('Plasma desktops are not ready');
+    }
+    for (var i = 0; i < allDesktops.length; ++i) {
+      var desktop = allDesktops[i];
+      desktop.wallpaperPlugin = 'org.kde.image';
+      desktop.currentConfigGroup = ['Wallpaper', 'org.kde.image', 'General'];
+      desktop.writeConfig('Image', '${TARGET_IMAGE}');
+      desktop.writeConfig('PreviewImage', '${TARGET_IMAGE}');
+      if (desktop.readConfig('Image') !== '${TARGET_IMAGE}') {
+        throw new Error('Wallpaper configuration was not accepted');
+      }
+    }
+    print('nostalgia-wallpaper-applied:' + allDesktops.length);
+"
+
+# The bus name can exist before Plasma has created any desktop containments.
+# Retry connection failures and empty desktop lists, with bounded calls.
+DEADLINE=$((SECONDS + WAIT_SECONDS))
+RESULT=""
+while (( SECONDS < DEADLINE )); do
+  if RESULT=$(timeout 5s "${QDBUS}" org.kde.plasmashell /PlasmaShell \
+    org.kde.PlasmaShell.evaluateScript "${SCRIPT}" 2>&1); then
+    if [[ "${RESULT}" =~ ^nostalgia-wallpaper-applied:[1-9][0-9]*$ ]]; then
+      mkdir -p "${STATE_DIR}"
+      touch "${MARKER_FILE}"
+      echo "Nostalgia wallpaper applied to the Plasma desktops"
+      exit 0
+    fi
   fi
   sleep 1
 done
 
-if [[ ! -f "${CONFIG_FILE}" ]]; then
-  mkdir -p "$(dirname "${CONFIG_FILE}")"
-  : > "${CONFIG_FILE}"
-fi
-
-if ! command -v kwriteconfig6 >/dev/null 2>&1; then
-  exit 0
-fi
-
-mapfile -t DESKTOP_CONTAINMENTS < <(
-  awk '
-    /^\[Containments\]\[[0-9]+\]$/ {
-      match($0, /\[Containments\]\[([0-9]+)\]/, arr);
-      current=arr[1];
-      next;
-    }
-    /^\[Containments\]\[[0-9]+\]\[/ { next }
-    /^plugin=/{ 
-      if (current != "" && $0 ~ /org\.kde\.plasma\.folder$/) {
-        print current;
-      }
-    }
-  ' "${CONFIG_FILE}" | sort -u
-)
-
-# Fall back to the primary containment if Plasma has not populated the file yet.
-if [[ ${#DESKTOP_CONTAINMENTS[@]} -eq 0 ]]; then
-  DESKTOP_CONTAINMENTS=(1)
-fi
-
-for containment_id in "${DESKTOP_CONTAINMENTS[@]}"; do
-  kwriteconfig6 --file "${CONFIG_FILE}" \
-    --group Containments --group "${containment_id}" \
-    --group Wallpaper --group org.kde.image --group General \
-    --key Image "${TARGET_IMAGE}"
-
-  kwriteconfig6 --file "${CONFIG_FILE}" \
-    --group Containments --group "${containment_id}" \
-    --group Wallpaper --group org.kde.image --group General \
-    --key PreviewImage "${TARGET_IMAGE}"
-done
-
-# Ask plasmashell to refresh the wallpaper immediately if we can.
-if command -v qdbus >/dev/null 2>&1; then
-  qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript "
-    var desktops = desktops();
-    for (var i = 0; i < desktops.length; ++i) {
-      var d = desktops[i];
-      d.wallpaperPlugin = 'org.kde.image';
-      d.currentConfigGroup = ['Wallpaper', 'org.kde.image', 'General'];
-      d.writeConfig('Image', '${TARGET_IMAGE}');
-      d.writeConfig('PreviewImage', '${TARGET_IMAGE}');
-    }
-  " || true
-fi
-
-touch "${MARKER_FILE}"
+echo "Nostalgia wallpaper could not be applied; it will retry next desktop login: ${RESULT}" >&2
+exit 1

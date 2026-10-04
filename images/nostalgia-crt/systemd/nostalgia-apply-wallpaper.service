@@ -1,12 +1,14 @@
 [Unit]
 Description=Apply Nostalgia wallpaper defaults
-After=bazzite-user-setup.service
+After=bazzite-user-setup.service nostalgia-setup.service plasma-plasmashell.service
+PartOf=graphical-session.target
 ConditionUser=!@system
 
 [Service]
 Type=oneshot
 ExecStart=/usr/libexec/nostalgia-apply-wallpaper
 RemainAfterExit=yes
+TimeoutStartSec=90
 
 [Install]
-WantedBy=default.target
+WantedBy=plasma-workspace.target

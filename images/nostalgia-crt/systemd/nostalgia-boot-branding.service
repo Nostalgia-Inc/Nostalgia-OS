@@ -1,0 +1,13 @@
+[Unit]
+Description=Install Nostalgia GRUB boot branding
+After=local-fs.target
+RequiresMountsFor=/boot
+ConditionPathExists=/boot/grub2/grub.cfg
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/nostalgia-boot-branding
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

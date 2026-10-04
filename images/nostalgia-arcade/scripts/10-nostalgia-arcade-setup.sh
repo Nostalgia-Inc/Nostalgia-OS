@@ -14,6 +14,12 @@ fi
 
 mkdir -p "${STATE_DIR}"
 
+# Missing KDE tools must not produce a false setup-complete marker.
+if ! command -v kwriteconfig6 >/dev/null 2>&1; then
+    echo "KDE setup requires kwriteconfig6; retrying next desktop login" >&2
+    exit 1
+fi
+
 echo "🎮 Nostalgia Arcade - First Boot Setup Starting..."
 
 # ── KDE Plasma Configuration ───────────────────────────────────────────────────
@@ -48,7 +54,7 @@ APPS_DIR="${CONFIG_DIR}/xdg-desktop-portal"
 mkdir -p "${APPS_DIR}"
 
 # Verify key applications
-COMMON_APPS=("firefox" "kwrite" "dolphin" "konsole" "arduino" "mpv")
+COMMON_APPS=("firefox" "kwrite" "dolphin" "konsole" "mpv")
 for app in "${COMMON_APPS[@]}"; do
     if command -v "${app}" >/dev/null 2>&1; then
         echo "✓ ${app} available"
@@ -58,33 +64,32 @@ done
 # ── System Preferences ─────────────────────────────────────────────────────────
 echo "🔧 Applying system preferences..."
 
-# Set default applications
-kwriteconfig6 --file "${CONFIG_DIR}/mimeapps.list" \
-    --group "Default Applications" \
-    --key "x-scheme-handler/http" "firefox.desktop" 2>/dev/null || true
+# Set a browser only when installed. Bazzite normally supplies Firefox as Flatpak.
+BROWSER_DESKTOP=""
+if [[ -f /usr/share/applications/firefox.desktop ]]; then
+    BROWSER_DESKTOP="firefox.desktop"
+elif command -v flatpak >/dev/null 2>&1 && flatpak info org.mozilla.firefox >/dev/null 2>&1; then
+    BROWSER_DESKTOP="org.mozilla.firefox.desktop"
+fi
+if [[ -n "${BROWSER_DESKTOP}" ]]; then
+    for scheme in http https; do
+        kwriteconfig6 --file "${CONFIG_DIR}/mimeapps.list" \
+            --group "Default Applications" \
+            --key "x-scheme-handler/${scheme}" "${BROWSER_DESKTOP};"
+    done
+fi
 
 kwriteconfig6 --file "${CONFIG_DIR}/mimeapps.list" \
     --group "Default Applications" \
-    --key "text/plain" "kwrite.desktop" 2>/dev/null || true
+    --key "text/plain" "org.kde.kwrite.desktop;"
 
 # ── Create Desktop Shortcuts ───────────────────────────────────────────────────
 echo "🎮 Creating desktop shortcuts..."
 
-DESKTOP_DIR="${XDG_DESKTOP_DIR:-$HOME/Desktop}"
-mkdir -p "${DESKTOP_DIR}"
-
-# Arduino shortcut
-cat > "${DESKTOP_DIR}/Arduino.desktop" << 'EOF'
-[Desktop Entry]
-Type=Application
-Name=Arduino IDE
-Comment=Electronics development platform
-Exec=arduino
-Icon=arduino
-Categories=Development;Electronics;
-Terminal=false
-EOF
-chmod +x "${DESKTOP_DIR}/Arduino.desktop"
+DESKTOP_DIR="$(xdg-user-dir DESKTOP)"
+# Arduino's independent shortcut service handles its asynchronous installation.
+if [[ -n "$DESKTOP_DIR" && "$DESKTOP_DIR" != "$HOME" ]]; then
+mkdir -p "$DESKTOP_DIR"
 
 # Media player shortcut
 cat > "${DESKTOP_DIR}/Media Player.desktop" << 'EOF'
@@ -98,6 +103,7 @@ Categories=AudioVideo;Player;
 Terminal=false
 EOF
 chmod +x "${DESKTOP_DIR}/Media Player.desktop"
+fi
 
 echo "✓ Desktop shortcuts created"
 

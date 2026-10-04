@@ -1,4 +1,4 @@
-FROM ghcr.io/ublue-os/bazzite-deck@sha256:98a0c1fbd89c150ed6ba9d356b3a3ddc11361c4d3a26c8fd17321b9c762d1081
+FROM ghcr.io/ublue-os/bazzite-deck@sha256:286ed98549609b2790d3430f4ad796e888804a695faa65268ea5e6e20381f9d8
 
 # Fix terra repository GPG issues for bootc-image-builder
 RUN for repo in /etc/yum.repos.d/terra*.repo; do \
@@ -28,23 +28,27 @@ COPY common/ /usr/share/nostalgia/
 # ── Plymouth theme (build-time) ───────────────────────────────────────────────
 # path exists in repo: images/nostalgia-crt/plymouth/nostalgia/*
 COPY images/nostalgia-crt/plymouth/nostalgia /usr/share/plymouth/themes/nostalgia
-RUN set -eux; \
-    install -d /etc/plymouth; \
-    printf '%s\n[Daemon]\nTheme=nostalgia\nShowDelay=0\n' > /etc/plymouth/plymouthd.conf; \
+COPY --chmod=0755 images/nostalgia-crt/scripts/nostalgia-build-initramfs.sh /tmp/nostalgia-build-initramfs
+RUN /tmp/nostalgia-build-initramfs && rm /tmp/nostalgia-build-initramfs && ostree container commit
+
+# Arduino IDE 2 installs asynchronously into the writable system Flatpak store.
+COPY --chmod=0755 common/scripts/nostalgia-arduino-install.sh /usr/libexec/nostalgia-arduino-install
+COPY --chmod=0755 common/scripts/nostalgia-arduino-shortcut.sh /usr/libexec/nostalgia-arduino-shortcut
+COPY --chmod=0644 common/systemd/nostalgia-arduino-install.service /usr/lib/systemd/system/nostalgia-arduino-install.service
+COPY --chmod=0644 common/systemd/nostalgia-arduino-shortcut.service /usr/lib/systemd/user/nostalgia-arduino-shortcut.service
+COPY --chmod=0644 common/udev/70-nostalgia-arduino.rules /usr/lib/udev/rules.d/70-nostalgia-arduino.rules
+RUN systemctl enable nostalgia-arduino-install.service && \
+    systemctl --global enable nostalgia-arduino-shortcut.service && \
     ostree container commit
 
-# ── KDE default wallpaper for new users via /etc/skel ─────────────────────────
-# if you ship: common/branding/wallpaper.png
-RUN if [ -f /usr/share/nostalgia/branding/wallpaper.png ]; then \
-      install -D /usr/share/nostalgia/branding/wallpaper.png /usr/share/nostalgia/Nostalgia.png && \
-      install -d /etc/skel/.config && \
-      printf '%s\n[Containments][1][Wallpaper][org.kde.image][General]\nImage=file:///usr/share/nostalgia/Nostalgia.png\n' \
-        > /etc/skel/.config/plasma-org.kde.plasma.desktop-appletsrc ; \
-    fi
+# Install the wallpaper asset; the login service configures real Plasma desktops.
+RUN set -eux; \
+    install -Dm0644 /usr/share/nostalgia/branding/wallpaper.png /usr/share/nostalgia/Nostalgia.png; \
+    ostree container commit
 
 # ── Ensure wallpaper is applied on first login ────────────────────────────────
 COPY images/nostalgia-crt/scripts/nostalgia-apply-wallpaper.sh /usr/libexec/nostalgia-apply-wallpaper
-COPY images/nostalgia-crt/systemd/nostalgia-apply-wallpaper.service /usr/lib/systemd/user/nostalgia-apply-wallpaper.service
+COPY --chmod=0644 images/nostalgia-crt/systemd/nostalgia-apply-wallpaper.service /usr/lib/systemd/user/nostalgia-apply-wallpaper.service
 RUN set -eux; \
     chmod 0755 /usr/libexec/nostalgia-apply-wallpaper; \
     systemctl --global enable nostalgia-apply-wallpaper.service; \
@@ -52,7 +56,7 @@ RUN set -eux; \
 
 # ── First boot setup script and service ────────────────────────────────────────
 COPY images/nostalgia-crt/scripts/10-nostalgia-setup.sh /usr/libexec/nostalgia-setup
-COPY images/nostalgia-crt/systemd/nostalgia-setup.service /usr/lib/systemd/user/nostalgia-setup.service
+COPY --chmod=0644 images/nostalgia-crt/systemd/nostalgia-setup.service /usr/lib/systemd/user/nostalgia-setup.service
 RUN set -eux; \
     chmod 0755 /usr/libexec/nostalgia-setup; \
     systemctl --global enable nostalgia-setup.service; \
@@ -60,7 +64,7 @@ RUN set -eux; \
 
 # ── Power and performance tuning script and service ────────────────────────────
 COPY images/nostalgia-crt/scripts/nostalgia-power-tuning.sh /usr/libexec/nostalgia-power-tuning
-COPY images/nostalgia-crt/systemd/nostalgia-power-tuning.service /usr/lib/systemd/system/nostalgia-power-tuning.service
+COPY --chmod=0644 images/nostalgia-crt/systemd/nostalgia-power-tuning.service /usr/lib/systemd/system/nostalgia-power-tuning.service
 RUN set -eux; \
     chmod 0755 /usr/libexec/nostalgia-power-tuning; \
     systemctl enable nostalgia-power-tuning.service; \
@@ -68,15 +72,17 @@ RUN set -eux; \
 
 # ── GRUB theme configuration ───────────────────────────────────────────────────
 COPY images/nostalgia-crt/grub/theme.txt /usr/share/grub/themes/nostalgia-grub/theme.txt
-RUN set -eux; \
-    mkdir -p /usr/share/grub/themes/nostalgia-grub; \
-    install -D /usr/share/grub/themes/nostalgia-grub/theme.txt /boot/grub2/themes/nostalgia/theme.txt; \
-    ostree container commit
+COPY --chmod=0755 images/nostalgia-crt/scripts/nostalgia-boot-branding.py /usr/libexec/nostalgia-boot-branding
+COPY --chmod=0644 images/nostalgia-crt/systemd/nostalgia-boot-branding.service /usr/lib/systemd/system/nostalgia-boot-branding.service
+RUN systemctl enable nostalgia-boot-branding.service && ostree container commit
 
 # ── Ship Game Mode intro/outro videos (Steam Deck style overrides) ────────────
 # put .webm files here in the repo: images/nostalgia-crt/gamescope/media/
 RUN install -d /usr/share/nostalgia/media
 COPY images/nostalgia-crt/gamescope/media/ /usr/share/nostalgia/media/
+RUN set -eux; \
+    ln -s CRT-BOOT.webm /usr/share/nostalgia/media/boot-intro.webm; \
+    ostree container commit
 
 # seed new users with steam “ui override” videos
 RUN install -d /etc/skel/.steam/root/config/uioverrides/movies && \
@@ -90,4 +96,4 @@ RUN install -d /etc/skel/.steam/root/config/uioverrides/movies && \
     fi
 
 # helper tools for runtime media playback
-RUN rpm-ostree install mpv || true && ostree container commit
+# mpv is a required package installed by build.sh.

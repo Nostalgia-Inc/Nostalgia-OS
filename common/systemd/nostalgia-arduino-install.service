@@ -1,0 +1,14 @@
+[Unit]
+Description=Install Nostalgia Arduino IDE 2
+After=network.target bazzite-flatpak-manager.service
+StartLimitIntervalSec=0
+
+[Service]
+Type=exec
+ExecStart=/usr/libexec/nostalgia-arduino-install
+Restart=on-failure
+RestartSec=120
+RuntimeMaxSec=30min
+
+[Install]
+WantedBy=multi-user.target

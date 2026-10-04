@@ -1,6 +1,6 @@
 [Unit]
 Description=Nostalgia OS Power and Performance Tuning
-After=multi-user.target
+After=local-fs.target systemd-udev-trigger.service
 Before=getty@tty1.service
 
 [Service]

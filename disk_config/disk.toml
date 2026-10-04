@@ -7,4 +7,4 @@ minsize = "20 GiB"
 [[customizations.user]]
 name = "nostalgia"
 password = "nostalgia"
-groups = ["wheel"]
+groups = ["wheel", "dialout"]

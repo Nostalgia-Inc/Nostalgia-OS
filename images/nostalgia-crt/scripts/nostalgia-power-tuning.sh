@@ -10,29 +10,38 @@ echo "🔋 Applying Nostalgia OS power and performance optimizations..."
 # For the Intel Celeron N5105 in LattePanda Delta 3
 echo "⚙️  Configuring CPU governor..."
 
-# Check if cpupower is available
-if command -v cpupower >/dev/null 2>&1; then
-    # Use the schedutil governor for dynamic frequency scaling
-    # This provides good balance between performance and power consumption
-    cpupower frequency-set --governor schedutil 2>/dev/null || true
-    echo "✓ CPU governor set to schedutil"
-else
-    # Fallback: Set via sysfs directly
-    for cpu in /sys/devices/system/cpu/cpu*/cpufreq; do
-        if [[ -f "${cpu}/scaling_governor" ]]; then
-            echo "schedutil" > "${cpu}/scaling_governor" 2>/dev/null || true
+# Intel P-state often exposes powersave/performance instead of schedutil.
+# Select a supported dynamic policy; never claim an unsupported write succeeded.
+for cpu in /sys/devices/system/cpu/cpufreq/policy*; do
+    if [[ ! -r "${cpu}/scaling_available_governors" ]]; then
+        continue
+    fi
+    governor=""
+    for candidate in schedutil powersave; do
+        if grep -qw "${candidate}" "${cpu}/scaling_available_governors"; then
+            governor="${candidate}"
+            break
         fi
     done
-    echo "✓ CPU governor configured via sysfs"
-fi
+    if [[ -z "${governor}" ]]; then
+        echo "⚠️  No supported dynamic governor for ${cpu}; retaining current policy"
+    elif printf '%s\n' "${governor}" > "${cpu}/scaling_governor"; then
+        echo "✓ ${cpu##*/}: $(< "${cpu}/scaling_governor") governor"
+    else
+        echo "⚠️  Could not set governor for ${cpu}" >&2
+    fi
+done
 
 # ── Turbo Boost Configuration ──────────────────────────────────────────────────
 echo "🚀 Configuring Turbo Boost..."
 
 # Enable Intel Turbo Boost for better performance when needed
 if [[ -f /sys/devices/system/cpu/intel_pstate/no_turbo ]]; then
-    echo "0" > /sys/devices/system/cpu/intel_pstate/no_turbo 2>/dev/null || true
-    echo "✓ Intel Turbo Boost enabled"
+    if echo "0" > /sys/devices/system/cpu/intel_pstate/no_turbo; then
+        echo "✓ Intel Turbo Boost enabled"
+    else
+        echo "⚠️  Intel Turbo Boost could not be enabled" >&2
+    fi
 fi
 
 # ── I/O Scheduler Optimization ─────────────────────────────────────────────────
@@ -58,9 +67,11 @@ fi
 
 # Set reasonable thermal limits
 if command -v thermald >/dev/null 2>&1; then
-    systemctl enable thermald 2>/dev/null || true
-    systemctl start thermald 2>/dev/null || true
-    echo "✓ Thermal daemon enabled"
+    if systemctl enable --now thermald.service; then
+        echo "✓ Thermal daemon enabled"
+    else
+        echo "⚠️  Thermal daemon could not be enabled" >&2
+    fi
 fi
 
 # ── Disk Performance ───────────────────────────────────────────────────────────
@@ -92,8 +103,8 @@ sysctl -w vm.swappiness=10 2>/dev/null || true
 sysctl -w vm.vfs_cache_pressure=50 2>/dev/null || true
 
 # Enable huge pages for better memory performance
-echo "1" > /sys/kernel/mm/transparent_hugepage/enabled 2>/dev/null || true
-echo "madvise" > /sys/kernel/mm/transparent_hugepage/shmem_enabled 2>/dev/null || true
+echo "madvise" > /sys/kernel/mm/transparent_hugepage/enabled 2>/dev/null || true
+echo "advise" > /sys/kernel/mm/transparent_hugepage/shmem_enabled 2>/dev/null || true
 
 echo "✓ Memory management optimized"
 
