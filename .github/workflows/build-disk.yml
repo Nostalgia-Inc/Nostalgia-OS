@@ -27,7 +27,7 @@ concurrency:
 jobs:
   build:
     name: Build ISO
-    runs-on: ${{ inputs.platform == 'amd64' && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}
+    runs-on: ${{ inputs.platform == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
     permissions:
       contents: read
       packages: read
@@ -89,7 +89,7 @@ jobs:
           set -euo pipefail
           DATE=$(date -u +%Y%m%d)
           echo "date=${DATE}" >> "${GITHUB_OUTPUT}"
-          echo "base=nostalgia-anaconda-iso-${{ inputs.platform }}-${DATE}" >> "${GITHUB_OUTPUT}"
+          echo "base=nostalgia-anaconda-iso-${{ inputs.platform || 'amd64' }}-${DATE}" >> "${GITHUB_OUTPUT}"
 
       - name: Move & rename ISO to nostalgia-*
         shell: bash

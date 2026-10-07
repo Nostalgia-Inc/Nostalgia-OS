@@ -67,105 +67,130 @@ sudo systemctl --global reenable nostalgia-setup.service nostalgia-apply-wallpap
 Log out and back into KDE after migrating the links. To inspect first-login
 setup, use `journalctl --user -u nostalgia-setup.service -b`; these are user units.
 
-## Larger changes awaiting confirmation
+## Approved Arduino and boot-branding completion
 
-These findings are from the source review. They have not been corrected as part
-of the startup patch.
-
-The stable registry manifest resolved on 4 October 2026 to Bazzite version
-`44.20260929`, published 29 September 2026, with digest
-`sha256:286ed98549609b2790d3430f4ad796e888804a695faa65268ea5e6e20381f9d8`.
-The base change was approved and applied to both Containerfiles. They now use:
+The base pin, Arduino IDE 2, and CRT boot-branding changes were explicitly
+approved. Both Containerfiles use Bazzite Deck `44.20260929`:
 
 ```dockerfile
 FROM ghcr.io/ublue-os/bazzite-deck@sha256:286ed98549609b2790d3430f4ad796e888804a695faa65268ea5e6e20381f9d8
 ```
 
-The replacement base downloaded successfully and a full CRT container build
-completed with local tag `localhost/nostalgia-os:feature-validation`. That build
-still skipped Arduino after the package resolver returned `Packages not found:
-arduino`; a successful container build is therefore not proof that every feature
-works. A cached follow-up build verifies corrected unit-file permissions.
+The old digest returned `manifest unknown`. The old Arduino RPM install returned
+`Packages not found: arduino` but ignored the error. Both variants now use a
+background system Flatpak installer for `cc.arduino.IDE2`. Failed downloads retry,
+and completion requires a successful `flatpak info --system` check. The ISO-only
+legacy app ID and invalid `Exec=arduino` shortcuts have been removed. An
+independent user service creates/migrates the exported IDE 2 shortcut, including
+accounts whose old first-login setup already completed. It honors localized and
+disabled Desktop directories and preserves personal shortcuts.
 
-| Priority | Finding | Proposed change |
+The image seeds a local `dialout` entry from Fedora's NSS group database so
+shadow user-management tools and installers can assign the group. New
+installation accounts belong to `dialout`. Scoped udev rules cover the
+LattePanda Leonardo's vendor normal/upload IDs (`3343:803a`/`3343:003a` and the
+vendor-listed `2a03` alternatives), plus standard Leonardo IDs. These came from
+the [vendor's configuration bundle](https://docs.lattepanda.com/content/3rd_delta_edition/drivers_and_software/).
+CRT also seeds a thin LattePanda sketch profile referencing Arduino's maintained
+AVR core, Leonardo variant, and avrdude tool. Users install Arduino AVR Boards
+from IDE 2's Boards Manager before compiling; the full old vendor toolchain is
+not bundled. The profile supports sketch uploads, not bootloader flashing.
+
+CRT GRUB now has actual boot-menu, help, and timeout components and uses the
+shipped Unifont font. Its system helper validates a managed `custom.cfg` block,
+backs up existing custom configuration, preserves unmanaged entries and file
+permissions, and copies theme/font assets to `/boot/grub2`. It refuses missing
+hooks, malformed managed blocks, or symlinked custom configuration. It leaves
+BLS entries and the main GRUB configuration intact. The ISO invokes the same
+helper; disk images apply it on their first boot for the following boot.
+
+Plymouth now stores scaled images, crops complete spinner frames with Image.Crop,
+and animates through SetRefreshFunction. It includes password/question callbacks.
+The required script plugin is installed, the theme is selected, and dracut rebuilds
+an explicit image kernel's initramfs with checks for the script, theme and text
+renderer. A real VM test caught an omitted OSTree dracut module: container builds
+do not autodetect the installed system's root setup. The rebuild now explicitly
+includes `ostree` and checks for its root-setup service and binary. CRT also ships
+bootc kernel arguments to activate the splash. The GRUB service remounts `/boot`
+writable only inside a private mount namespace, following bootc's read-only mount
+policy. Windows CRLF in the .plymouth descriptor previously made Plymouth look
+for `script\r.so`; LF rules now cover theme scripts, descriptors and udev rules.
+
+## Power and other routine corrections
+
+Both power services had an ordering cycle involving `multi-user.target`; it is
+removed. CRT chooses a supported CPU governor per policy (`schedutil`, or
+`powersave` on Intel P-state), reads it back, and logs turbo/thermald failures.
+Anonymous huge pages use `madvise`; shmem uses the kernel's valid `advise` value.
+Existing service-disabling, USB-autosuspend, and write-cache policies are retained.
+These are requested settings, not demonstrated LattePanda performance gains.
+
+Default-app setup now uses KWrite's actual desktop ID and selects native/Flatpak
+Firefox only when installed, for both HTTP and HTTPS. Required build packages
+fail the build instead of silently being skipped. The lint recipe now propagates
+ShellCheck failures rather than discarding each find-exec command's status.
+
+## Verified checks
+
+- 29 regression cases cover wallpaper startup/Plasma scripting, CPU governors,
+  Arduino download failure/retry, localized shortcuts, and GRUB preservation.
+  Linux and Windows run their respective fixtures; platform-dependent skips are
+  explicit. All cases have passed across the two environments.
+- ShellCheck 0.10.0, Bash syntax, Justfile formatting, disk/ISO TOML parsing and
+  extracted kickstart post-install syntax checks passed.
+- A CRT container built successfully with the updated base and required tmux,
+  mpv, thermald and Plymouth script plugin. Initramfs listings contain the theme,
+  script plugin, label renderer and fonts.
+- Six installed system/user services passed systemd verification; all unit files
+  have mode 0644. Scoped serial rules passed udevadm verify.
+- A normal test account was created with both `wheel` and `dialout` inside the
+  final image. Running the installed shortcut helper as that account copied the
+  actual Flatpak launcher and LattePanda board profile successfully.
+- The GRUB helper passed the actual grub2-script-check inside the image, twice,
+  while preserving a fixture's original custom settings and backup.
+- A real isolated system Flatpak installation downloaded Arduino IDE 2.3.10,
+  its runtime and exported launcher. The manifest grants device access. Container
+  sandbox post-install hooks emitted namespace warnings; application GUI startup
+  on an installed OS remains a separate check.
+- The IDE-bundled Arduino CLI 1.5.1 installed Arduino AVR Boards 1.8.8 and compiled
+  Blink for `lattepanda:avr:lpleonardo`: 3956 bytes flash, 149 bytes RAM.
+- The actual Plymouth script rendered its existing artwork and spinner using
+  Plymouth 24.004.60's X11 renderer in an isolated Debian container. The
+  password prompt also rendered visibly; the final Fedora image uses
+  DRM/framebuffer renderers and includes its text renderer/fonts.
+
+The final local CRT image is `localhost/nostalgia-os:finalization`, image ID
+`156ad4bde9fdf5783c6d97e84ab2af7433714e53bed83646296749606193a43a`.
+The disk builder produced an ext4 QCOW2 for local QA. The configured Btrfs build
+failed at an upstream virtiofs socket-startup race; a bounded readiness fix was
+applied only to the local validation tool, outside this OS repository. WSL's
+kernel lacks Btrfs, so production Btrfs installation remains unverified.
+The QA disk initially contained image `8a7b02f...`; its initramfs was replaced
+with the corrected build and splash arguments staged for diagnostic booting.
+The custom Plymouth artwork and animation rendered in the VM, and OSTree root
+setup and switch-root completed. This is staged boot evidence, not a fresh
+installation of the final image. Full desktop/GRUB acceptance is still pending. No
+physical LattePanda boot, IDE GUI upload, thermal measurement or suspend/resume
+test has been performed.
+
+## Remaining release work outside this approval
+
+| Priority | Finding | Next decision/check |
 | --- | --- | --- |
-| Resolved | The previous Bazzite digest returned `manifest unknown`. | Both pins were updated with approval to the available stable digest above. Full build validation is in progress. |
-| High | CRT explicitly disables Terra RPM signature verification. | Replace the repository bypass with verified keys or repository configuration compatible with the image builder; fail visibly on verification errors. |
-| High | Disk and ISO configurations ship the shared `nostalgia` administrator account/password. | Require installer-selected credentials for release images; keep known credentials only in an explicit development configuration. |
-| Medium | Build/push image inputs differ, but the metadata output provides fully qualified tags, which both actions accept. This is not a confirmed publishing failure. Signing references those tags and leaves the digest variable unused. | Simplify the redundant image inputs, consider digest-based signing, and verify a real workflow run before release. |
-| High | ISO pull requests default to the ARM runner when no workflow input exists. The container build has no corresponding ARM platform build. | Make x86-64 the explicit supported default, or add a validated multi-architecture image/ISO pipeline. |
-| High | Arcade's `gamescope/media` directory contains only `.gitkeep`, so no boot video is supplied. Its Plymouth theme references three PNG files that are absent. | Decide whether Arcade should reuse CRT assets or receive its own assets, then complete and boot-test that variant. |
-| Medium | The boot scripts disable Bluetooth every boot (and CRT also disables printing/discovery), disable USB autosuspend, force performance settings, and mostly hide failures. | Make device/service policies configurable, respect available governors and user choices, and log what actually succeeds. |
-| Medium | Arduino RPM installation is optional and can silently fail, while desktop shortcuts always execute `arduino`. The ISO separately installs a Flatpak with a different launch command. | Choose one supported Arduino installation method and generate shortcuts only for installed applications. Honor the localized XDG Desktop location. |
-| Medium | GRUB files are copied but no custom `GRUB_THEME` configuration is supplied. Plymouth animations need a boot-time rendering check. | Finish the boot-branding integration and verify GRUB/Plymouth on a booted image before marking those features complete. |
-| Medium | Local ISO recipes use `iso`, whereas the workflow uses `anaconda-iso`; several image-building and cleanup recipes need separate validation. | Align recipes with the selected builder version and make cleanup target only documented generated artifacts. |
+| High | CRT still disables Terra RPM signature checks. | Replace the bypass with verified repository keys/configuration. |
+| High | Installers retain the shared nostalgia administrator/password. | Choose production credential handling; current credentials are for development. |
+| Medium | ISO PR builds now default to x86-64, matching the container build; explicit ARM support remains unvalidated. | Verify a real workflow run and separately decide whether to support ARM. |
+| High | Arcade has only a media .gitkeep and references three missing Plymouth PNGs. | Supply Arcade assets and separately build/boot-test that variant. |
+| Medium | Some power commands still hide errors; Bluetooth/printing/discovery and write-cache defaults are broad. | Decide on configurable policies, then measure on the Delta 3. |
+| Medium | Local disk/ISO/VM/cleanup recipes need end-to-end validation. | Validate the selected builder and make cleanup target only known generated artifacts. |
 
-## Validation
+The apparent CI build/push image-name mismatch is not itself a confirmed bug:
+fully qualified metadata tags override those inputs. Digest-based signing is a
+possible improvement; a real publishing workflow remains untested. See
+[buildah tag handling](https://github.com/redhat-actions/buildah-build/blob/v2/src/utils.ts)
+and [push-to-registry inputs](https://github.com/redhat-actions/push-to-registry/tree/v2#image-tag-inputs).
 
-- Nine isolated Bash/startup tests passed under Fedora WSL.
-- Three Plasma JavaScript tests passed under Node.js on Windows: multiple
-  desktops, no desktops, and rejected configuration. No live desktop was changed.
-- All six repository shell scripts passed ShellCheck 0.10.0 and Bash syntax checks.
-- `just check`, recipe parsing, and a local build dry run passed.
-- Disk/ISO TOML parsed; the extracted ISO `%post` script passed Bash syntax checks.
-- Updated CRT user units passed `systemd-analyze --user verify` inside the cached
-  Bazzite-based image. Warnings concerned the Windows mount's file permissions.
-- A full CRT image build was attempted with a distinct local `wallpaper-fix` tag.
-  It stopped at `FROM`: the pinned base is not cached and GHCR reports its
-  manifest as unknown. No replacement base, new OS image, or deployment was made.
-
-## Follow-up feature audit
-
-The cached `localhost/nostalgia-os:latest` image and the replacement Bazzite base
-both report that neither `arduino` nor `plymouth-plugin-script` is installed.
-`thermald` is installed (2.5.13 in the new base). The fresh CRT build also reports
-`Packages not found: arduino`, skips it, and continues successfully. This confirms
-that Arduino installation is broken and the script-based Plymouth theme lacks
-its required renderer. The fresh build installs mpv 0.41.0 successfully.
-
-The CRT power service and the Arcade equivalent also had
-`After=multi-user.target` while being enabled under that target. This ordering
-cycle is now removed. CRT's governor logic checks each CPU frequency policy's
-available governors, chooses `schedutil` where supported and `powersave` for
-Intel P-state, and reports the actual resulting governor. Turbo/thermald errors
-are reported. The shmem hugepage policy is corrected to `advise`; anonymous
-memory uses `madvise`, per the [kernel documentation](https://docs.kernel.org/admin-guide/mm/transhuge.html).
-
-All three new CPU governor regression cases passed (schedutil, Intel P-state,
-and preservation of an unsupported policy), bringing the combined regression
-suite to 15 passing cases. Both power units passed systemd verification in the
-cached image. The existing service-disabling and write-cache policies remain
-unchanged pending a separate decision.
-
-Two initial audit details were corrected after checking the upstream action
-implementations and tracked hidden files: Arcade's media directory exists with
-`.gitkeep` (it has no actual video), and full image tags override the build/push
-action image fields. The apparent name mismatch alone is not a publishing bug.
-See [buildah-build's tag handling](https://github.com/redhat-actions/buildah-build/blob/v2/src/utils.ts)
-and [push-to-registry's documented inputs](https://github.com/redhat-actions/push-to-registry/tree/v2#image-tag-inputs).
-
-The remaining Arduino and boot-integration implementation is described in
-[FEATURE_COMPLETION_PLAN.md](FEATURE_COMPLETION_PLAN.md) and awaits confirmation.
-README's feature table now reflects evidence rather than claiming that every
-feature has already succeeded.
-
-Default-application setup also referenced the wrong KWrite desktop ID and
-unconditionally selected a native Firefox launcher that is absent in the cached
-image. Both variants now use `org.kde.kwrite.desktop`, recognize native or
-Flatpak Firefox, and configure both HTTP and HTTPS only when Firefox is installed.
-
-A complete graphical boot on the target hardware remains necessary to confirm
-the visible wallpaper, boot animations, and persistence across reboot. Unit tests
-and service validation do not establish hardware readiness or release completion.
-
-Containerfiles explicitly copy service units with mode 0644 so Windows checkouts
-do not produce executable, world-writable units in the OS image. The final CRT
-rebuild passed with image ID
-`dff21cf5cd70f665a84220107b38ce054d93c6dab936bf4379398eca7a36902a`.
-Inspection of this image verified all three unit modes as 0644, the readable
-wallpaper, the resolvable Steam boot-video override, and installed tmux 3.7c,
-mpv 0.41.0, and thermald 2.5.13. Both user units and the power unit passed systemd
-verification without the earlier permission warnings. Arduino and
-`plymouth-plugin-script` are absent. No bootable disk/ISO or hardware boot was
-performed because the larger Arduino/boot-branding completion still awaits
-confirmation.
+[CRT_VALIDATION.md](CRT_VALIDATION.md) contains first-boot troubleshooting and the
+remaining physical acceptance checks. README's table distinguishes tested image
+behavior from hardware readiness. No GitHub publishing or OS deployment was
+performed by this review.

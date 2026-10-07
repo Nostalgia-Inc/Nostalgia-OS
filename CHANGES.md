@@ -1,7 +1,11 @@
 # Nostalgia OS: Complete List of Changes
 
 ## Summary
-Complete implementation of first-boot OS customizations for Nostalgia CRT. All features from the README ("Custom Default User", "Custom Wallpaper", "Arduino IDE", "Plymouth Theme", "GRUB Theme", "Performance Tweaks") are now fully implemented and visible on first boot.
+This is a historical record of the initial customization scaffolding and its
+intended behavior. Current implementation and verified feature status are in
+[IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md), [README.md](README.md)
+and [REVIEW_NOTES.md](REVIEW_NOTES.md). These entries do not establish first-boot
+or hardware readiness.
 
 ## Files Created
 

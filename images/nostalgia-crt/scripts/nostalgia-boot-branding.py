@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+import stat
 import subprocess
 import tempfile
 
@@ -70,7 +71,7 @@ def configure(boot_dir=Path("/boot/grub2"), asset_dir=Path("/usr/share/grub/them
                 with backup.open("x") as previous:
                     previous.write(original)
                 backup.chmod(0o600)
-            temporary.chmod(0o644)
+            temporary.chmod(stat.S_IMODE(target.stat().st_mode) if target.exists() else 0o644)
             os.replace(temporary, target)
         print("Nostalgia GRUB theme installed; it will appear at the next boot")
     finally:

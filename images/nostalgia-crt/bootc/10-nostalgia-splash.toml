@@ -1,0 +1,2 @@
+# Activate the selected Plymouth theme, including when a serial console is present.
+kargs = ["rhgb", "quiet", "plymouth.ignore-serial-consoles"]

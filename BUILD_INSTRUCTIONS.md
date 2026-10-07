@@ -2,11 +2,17 @@
 
 ## Prerequisites
 
+See [current validation results](REVIEW_NOTES.md) before treating a build as
+release-ready. Use a Linux build host with the configured Btrfs filesystem
+supported by its kernel. Windows/WSL validation needs additional tooling; see
+the recorded builder limitations in the review.
+
 Your system needs:
 - `podman` (container runtime)
 - `just` (task runner)
 - `bootc-image-builder` (for creating bootable images)
-- At least 30GB free disk space for builds
+- Substantially more than 30GB free for local testing: container layers,
+  rootful copies, builder cache and disk artifacts coexist
 - QEMU with KVM support (for testing)
 
 ## Building the Image
@@ -14,7 +20,7 @@ Your system needs:
 ### Quick Build (Recommended for Testing)
 ```bash
 # Build QCOW2 image suitable for QEMU testing
-just build-qcow2
+just rebuild-qcow2
 
 # This will:
 # 1. Build the container image with all customizations
@@ -23,6 +29,10 @@ just build-qcow2
 ```
 
 ### Other Build Types
+
+The `build-*` disk recipes convert an existing container; `rebuild-*` also runs
+the container build, using its normal layer cache.
+
 ```bash
 # Build RAW image (for direct deployment)
 just build-raw
@@ -30,7 +40,7 @@ just build-raw
 # Build ISO (for USB installation)
 just build-iso
 
-# Rebuild (clean rebuild, skipping cache)
+# Rebuild the container and disk using the normal layer cache
 just rebuild-qcow2
 ```
 
@@ -42,7 +52,7 @@ just rebuild-qcow2
 just run-vm-qcow2
 
 # The VM will:
-# 1. Boot with Nostalgia GRUB theme (green text)
+# 1. Install the Nostalgia GRUB theme during first boot, for the following boot
 # 2. Show Plymouth boot animation
 # 3. Apply performance tuning
 # 4. Prompt for login
@@ -54,7 +64,7 @@ just run-vm-qcow2
    - Username: `nostalgia`
    - Password: `nostalgia`
 
-2. **Verify GRUB Theme** (before login)
+2. **Verify GRUB Theme** (after the first installed boot and a reboot)
    - Check if bootloader has green (#00ff00) text on black background
    - Title should say "Nostalgia OS"
 
@@ -66,7 +76,7 @@ just run-vm-qcow2
    - File: `common/branding/wallpaper.png`
 
 5. **Verify Desktop Setup**
-   - Arduino IDE shortcut should exist on desktop
+   - Arduino IDE downloads in the background; its shortcut appears after installation
    - KDE Plasma should be fully configured
    - No setup dialogs should appear on subsequent logins
 
@@ -76,7 +86,9 @@ just run-vm-qcow2
    - Check logs: `journalctl -u nostalgia-power-tuning.service`
 
 7. **Verify Applications**
-   - Arduino IDE should launch: `arduino`
+   - Arduino IDE should launch: `flatpak run cc.arduino.IDE2`
+   - Install Arduino AVR Boards in the IDE before compiling for the LattePanda
+   - Use [CRT_VALIDATION.md](CRT_VALIDATION.md) for service and serial-access checks
    - Firefox should work
    - Open terminal: `konsole`
 
@@ -84,49 +96,48 @@ just run-vm-qcow2
 
 ### Build Fails
 ```bash
-# Clean build artifacts
-just clean
-
-# Try rebuilding
+# Inspect the actual failure before rebuilding
+# The repository's cleanup recipe still needs a separate safety review.
+# Rebuild with normal caching
 just rebuild-qcow2
 
 # Check for errors in build output
 ```
 
 ### Image Won't Boot
-1. Ensure QEMU has KVM support: `grep kvm /proc/cpuinfo`
+1. Check access to KVM on the build host: `ls -l /dev/kvm`
 2. Check disk space: `df -h`
 3. Verify image exists: `ls -lh output/qcow2/disk.qcow2`
 
 ### Services Not Running
 ```bash
-# SSH into running VM (if networking configured)
-ssh -p 2222 nostalgia@localhost
+# Run these commands in the installed system's desktop terminal
 
 # Check service status
 systemctl status nostalgia-power-tuning.service
-systemctl status nostalgia-setup.service
+systemctl --user status nostalgia-setup.service
 journalctl -u nostalgia-power-tuning.service -n 20
-journalctl -u nostalgia-setup.service -n 20
+journalctl --user -u nostalgia-setup.service -n 20
 ```
 
 ### Wallpaper Not Showing
-1. Verify wallpaper file exists: `ls common/branding/wallpaper.png`
-2. Check wallpaper script ran: `journalctl -u nostalgia-apply-wallpaper.service`
-3. Manually trigger: `/usr/libexec/nostalgia-apply-wallpaper`
+1. Verify the installed asset: `ls /usr/share/nostalgia/Nostalgia.png`
+2. Check the user service: `journalctl --user -u nostalgia-apply-wallpaper.service`
+3. For an affected upgraded account, follow the marker-reset recovery steps in
+   [REVIEW_NOTES.md](REVIEW_NOTES.md). These require the rebuilt image first.
 
 ## Building for Different Configurations
 
 ### For LattePanda Delta 3 (Current Target)
 ```bash
-# Default build - optimized for LattePanda specs
-just build-qcow2
+# Build the CRT container and disk; measure tuning on the physical board
+just rebuild-qcow2
 ```
 
 ### For Different Hardware
 Edit `images/nostalgia-crt/scripts/nostalgia-power-tuning.sh` to adjust:
 - CPU governor settings
-- Thermal limits
+- Thermal-management service settings
 - I/O scheduler preferences
 
 ## Verifying Build Success
@@ -144,7 +155,7 @@ The build is successful when:
 
 ## Next Steps
 
-1. **First Boot**: Run `just build-qcow2 && just run-vm-qcow2`
+1. **First Boot**: Run `just rebuild-qcow2 && just run-vm-qcow2`
 2. **Verify**: Test all features per "First Boot Testing Steps"
 3. **Iterate**: Make adjustments based on what you find
 4. **Deploy**: Use ISO or RAW image for actual hardware
@@ -153,7 +164,7 @@ The build is successful when:
 ## Useful Commands
 
 ```bash
-# Check Containerfile syntax
+# Check Justfile syntax and formatting
 just check
 
 # Fix formatting

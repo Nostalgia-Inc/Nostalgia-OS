@@ -34,7 +34,7 @@ Plymouth.SetRefreshFunction(refresh_callback);
 
 // Keep password and question prompts visible, including encrypted-disk boots.
 fun show_prompt(text) {
-    image = Image.Text(text, 0.0, 1.0, 0.25);
+    image = Image.Text(text, 0.0, 1.0, 0.25, 1.0, "Sans 16", "center");
     prompt_sprite.SetImage(image);
     prompt_sprite.SetPosition(Window.GetWidth() / 2 - image.GetWidth() / 2,
                               Window.GetHeight() * 0.75, 1000);

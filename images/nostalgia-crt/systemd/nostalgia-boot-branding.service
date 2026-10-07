@@ -6,7 +6,9 @@ ConditionPathExists=/boot/grub2/grub.cfg
 
 [Service]
 Type=oneshot
-ExecStart=/usr/libexec/nostalgia-boot-branding
+# bootc mounts /boot read-only. Remount only in this private namespace;
+# the host keeps its original mount policy after the helper exits.
+ExecStart=/usr/bin/unshare --mount --propagation private /usr/bin/sh -c 'mount -o remount,rw /boot && exec /usr/libexec/nostalgia-boot-branding'
 RemainAfterExit=yes
 
 [Install]

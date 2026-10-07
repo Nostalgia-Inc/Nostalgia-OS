@@ -1,7 +1,7 @@
-# Proposed completion of CRT features
+# Approved completion of CRT features
 
-The base update to Bazzite `44.20260929` is approved and applied. The following
-larger changes require confirmation before implementation.
+The base update to Bazzite `44.20260929` is approved and applied. Arduino IDE 2 and CRT boot branding were also explicitly approved.
+The implementation and validation results are recorded in REVIEW_NOTES.md.
 
 ## Arduino IDE
 
@@ -35,11 +35,11 @@ larger changes require confirmation before implementation.
 
 The current code requests dynamic CPU scaling, Intel turbo, `mq-deadline`,
 thermald, memory/network adjustments, and disabled USB autosuspend. It also
-disables Bluetooth, printing, and network discovery. The service has an ordering
-cycle and most commands hide failure.
+disables Bluetooth, printing, and network discovery. The service ordering cycle and unsupported governor selection are corrected.
+Some retained tuning commands still hide failures.
 
-Routine corrections can fix ordering, select only a supported CPU governor,
-and log actual outcomes. Changes to Bluetooth/printing/discovery defaults,
+The routine corrections select a supported CPU governor and report its readback,
+and log turbo/thermald failures. Changes to Bluetooth/printing/discovery defaults,
 write-cache policy, or a configurable power-profile system are separate decisions
 and are not included in this proposal.
 

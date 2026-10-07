@@ -31,6 +31,11 @@ COPY images/nostalgia-crt/plymouth/nostalgia /usr/share/plymouth/themes/nostalgi
 COPY --chmod=0755 images/nostalgia-crt/scripts/nostalgia-build-initramfs.sh /tmp/nostalgia-build-initramfs
 RUN /tmp/nostalgia-build-initramfs && rm /tmp/nostalgia-build-initramfs && ostree container commit
 
+COPY --chmod=0644 images/nostalgia-crt/arduino/lattepanda/ /usr/share/nostalgia/arduino/lattepanda/
+RUN set -eux; \
+    if ! grep -q '^dialout:' /etc/group; then getent group dialout >> /etc/group; fi; \
+    ostree container commit
+
 # Arduino IDE 2 installs asynchronously into the writable system Flatpak store.
 COPY --chmod=0755 common/scripts/nostalgia-arduino-install.sh /usr/libexec/nostalgia-arduino-install
 COPY --chmod=0755 common/scripts/nostalgia-arduino-shortcut.sh /usr/libexec/nostalgia-arduino-shortcut
@@ -71,7 +76,7 @@ RUN set -eux; \
     ostree container commit
 
 # ── GRUB theme configuration ───────────────────────────────────────────────────
-COPY images/nostalgia-crt/grub/theme.txt /usr/share/grub/themes/nostalgia-grub/theme.txt
+COPY --chmod=0644 images/nostalgia-crt/grub/theme.txt /usr/share/grub/themes/nostalgia-grub/theme.txt
 COPY --chmod=0755 images/nostalgia-crt/scripts/nostalgia-boot-branding.py /usr/libexec/nostalgia-boot-branding
 COPY --chmod=0644 images/nostalgia-crt/systemd/nostalgia-boot-branding.service /usr/lib/systemd/system/nostalgia-boot-branding.service
 RUN systemctl enable nostalgia-boot-branding.service && ostree container commit
@@ -97,3 +102,5 @@ RUN install -d /etc/skel/.steam/root/config/uioverrides/movies && \
 
 # helper tools for runtime media playback
 # mpv is a required package installed by build.sh.
+COPY --chmod=0644 images/nostalgia-crt/bootc/10-nostalgia-splash.toml /usr/lib/bootc/kargs.d/10-nostalgia-splash.toml
+RUN ostree container commit

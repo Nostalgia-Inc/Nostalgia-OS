@@ -304,7 +304,7 @@ lint:
         exit 1
     fi
     # Run shellcheck on all Bash scripts
-    /usr/bin/find . -iname "*.sh" -type f -exec shellcheck "{}" ';'
+    /usr/bin/find . -path './.git' -prune -o -iname "*.sh" -type f -print0 | xargs -0 -r shellcheck
 
 # Runs shfmt on all Bash scripts
 format:

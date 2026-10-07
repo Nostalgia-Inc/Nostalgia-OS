@@ -22,6 +22,9 @@ RUN set -eux; \
     ostree container commit
 
 # Arduino IDE 2 installs asynchronously into the writable system Flatpak store.
+RUN set -eux; \
+    if ! grep -q '^dialout:' /etc/group; then getent group dialout >> /etc/group; fi; \
+    ostree container commit
 COPY --chmod=0755 common/scripts/nostalgia-arduino-install.sh /usr/libexec/nostalgia-arduino-install
 COPY --chmod=0755 common/scripts/nostalgia-arduino-shortcut.sh /usr/libexec/nostalgia-arduino-shortcut
 COPY --chmod=0644 common/systemd/nostalgia-arduino-install.service /usr/lib/systemd/system/nostalgia-arduino-install.service

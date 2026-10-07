@@ -40,15 +40,16 @@ This image is built purposely built for the Lattepanda Delta 3 Single Board Comp
 | --- | --- |
 | Custom default user | Configured in disk/ISO installer; a fresh installation must be tested. |
 | Custom wallpaper | Startup fix and isolated regression tests pass; a fresh graphical boot must be tested. |
-| Arduino IDE | Fresh build confirms `Packages not found: arduino`; installation and launcher need completion. |
-| Custom Plymouth theme | Assets exist; the script plugin is missing from the fresh image and animation/integration need completion. |
-| Custom GRUB theme | Theme file exists but is not activated; menu layout and boot integration need completion. |
+| Arduino IDE | IDE 2.3.10 downloaded successfully in an isolated system Flatpak store. LattePanda Blink compilation passes; GUI launch/physical upload remain pending. |
+| Custom Plymouth theme | Plugin/theme and OSTree root setup embedded in initramfs; animation rendered during staged VM boot. Full first-boot acceptance remains pending. |
+| Custom GRUB theme | Menu/timeout theme and activation service implemented; syntax and configuration-preservation checks pass. Installed boot remains to be verified. |
 | LattePanda power tweaks | Tuning script exists; service ordering and supported governor selection corrected; hardware results must be measured. |
 
 The base is pinned to Bazzite Deck `44.20260929`; the CRT container builds successfully.
 See
-[feature completion proposal](FEATURE_COMPLETION_PLAN.md) and
-[review and validation notes](REVIEW_NOTES.md) before treating an image as release-ready.
+[approved feature completion scope](FEATURE_COMPLETION_PLAN.md) and
+[review and validation notes](REVIEW_NOTES.md) and
+[CRT acceptance checks](CRT_VALIDATION.md) before treating an image as release-ready.
 
 ---
 
@@ -64,4 +65,3 @@ This image is meant for a standard system install on non-specific hardware.
   - Configure Custom Nostalgia ARCADE Plymouth Theme - [Planned]
   - Configure Custom GRUB Theme - [Planned]
   - Generic Hardware Support - [Planned]
-

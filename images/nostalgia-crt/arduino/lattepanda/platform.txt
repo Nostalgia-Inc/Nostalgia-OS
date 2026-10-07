@@ -1,0 +1,2 @@
+name=LattePanda AVR Boards
+version=0.0.3-nostalgia.1

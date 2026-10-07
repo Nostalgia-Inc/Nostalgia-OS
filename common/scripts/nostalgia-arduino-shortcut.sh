@@ -12,6 +12,17 @@ SOURCE=/var/lib/flatpak/exports/share/applications/cc.arduino.IDE2.desktop
 DESKTOP_DIR="$(xdg-user-dir DESKTOP)"
 mkdir -p "$STATE_DIR"
 
+# CRT ships a thin vendor board profile for the default Arduino sketchbook.
+# Its Arduino AVR dependency is installed from the IDE's Boards Manager.
+PROFILE=/usr/share/nostalgia/arduino/lattepanda
+if [[ -d "$PROFILE" ]]; then
+    BOARD_DIR="$HOME/Arduino/hardware/lattepanda/avr"
+    mkdir -p "$BOARD_DIR"
+    for file in boards.txt platform.txt; do
+        [[ -e "$BOARD_DIR/$file" ]] || install -m0644 "$PROFILE/$file" "$BOARD_DIR/$file"
+    done
+fi
+
 # XDG uses HOME when desktop icons are disabled.
 if [[ -z "$DESKTOP_DIR" || "$DESKTOP_DIR" == "$HOME" ]]; then
     echo "Desktop directory disabled; Arduino IDE 2 is available in the app menu"

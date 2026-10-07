@@ -1,0 +1,39 @@
+# LattePanda 3 Delta Leonardo sketch-upload profile.
+# Hardware values: LattePanda's official avr-0.0.3 board definition.
+# Reuse the maintained Arduino AVR core/toolchain instead of bundling old binaries.
+lpleonardo.name=LattePanda Leonardo
+lpleonardo.vid.0=0x3343
+lpleonardo.pid.0=0x003A
+lpleonardo.vid.1=0x3343
+lpleonardo.pid.1=0x803A
+lpleonardo.vid.2=0x2A03
+lpleonardo.pid.2=0x003A
+lpleonardo.vid.3=0x2A03
+lpleonardo.pid.3=0x803A
+lpleonardo.upload_port.0.vid=0x3343
+lpleonardo.upload_port.0.pid=0x003A
+lpleonardo.upload_port.1.vid=0x3343
+lpleonardo.upload_port.1.pid=0x803A
+lpleonardo.upload_port.2.vid=0x2A03
+lpleonardo.upload_port.2.pid=0x003A
+lpleonardo.upload_port.3.vid=0x2A03
+lpleonardo.upload_port.3.pid=0x803A
+lpleonardo.upload_port.4.board=lpleonardo
+lpleonardo.upload.tool=arduino:avrdude
+lpleonardo.upload.tool.default=arduino:avrdude
+lpleonardo.upload.protocol=avr109
+lpleonardo.upload.maximum_size=28672
+lpleonardo.upload.maximum_data_size=2560
+lpleonardo.upload.speed=57600
+lpleonardo.upload.disable_flushing=true
+lpleonardo.upload.use_1200bps_touch=true
+lpleonardo.upload.wait_for_upload_port=true
+lpleonardo.build.mcu=atmega32u4
+lpleonardo.build.f_cpu=16000000L
+lpleonardo.build.vid=0x3343
+lpleonardo.build.pid=0x803A
+lpleonardo.build.usb_product="LattePanda Leonardo"
+lpleonardo.build.board=AVR_LEONARDO
+lpleonardo.build.core=arduino:arduino
+lpleonardo.build.variant=arduino:leonardo
+lpleonardo.build.extra_flags={build.usb_flags}

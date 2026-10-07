@@ -77,9 +77,9 @@ QEMU will start, and you can login with:
 
 ### What Happens on First Boot
 
-1. **GRUB Bootloader** - Green retro-styled menu appears
+1. **GRUB Bootloader** - Branding is seeded by the boot-branding service; for disk images it appears from the following boot. The ISO helper can seed it during installation.
 2. **Plymouth Animation** - Custom boot splash plays
-3. **System Optimization** - Performance tuning runs silently
+3. **System Optimization** - The enabled tuning service requests the configured settings and logs governor/thermal outcomes; LattePanda power measurements remain necessary.
 4. **Login Prompt** - Enter your credentials
 
 ### What Happens on First Login
@@ -90,9 +90,9 @@ QEMU will start, and you can login with:
    - Applies wallpaper
    - Creates shortcuts
    - Configures preferences
-3. **All Customizations** are applied
+3. **Arduino IDE 2** downloads in the background once networking is available; its shortcut appears after installation. Install Arduino AVR Boards from Boards Manager before using the supplied LattePanda Leonardo profile.
 
-**Note**: Setup only runs once. Subsequent logins are normal.
+**Note**: Wallpaper/preferences setup applies once per user. Arduino installation retries failures independently. See [CRT validation and troubleshooting](CRT_VALIDATION.md) for status commands and hardware checks.
 
 ## 🎮 Using Nostalgia OS
 
